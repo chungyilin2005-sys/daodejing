@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>道德經</title>
+<!-- 主畫面與分頁圖示：build.py 產生的 icons/icon-512.png 以 base64 內嵌 -->
+<link rel="icon" type="image/png" sizes="512x512" href="data:image/png;base64,__ICON_B64__" id="appIcon">
+<link rel="apple-touch-icon" href="data:image/png;base64,__ICON_B64__">
+<meta name="application-name" content="道德經">
+<meta name="apple-mobile-web-app-title" content="道德經">
+<meta name="theme-color" content="#ECEBE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16203A" media="(prefers-color-scheme: dark)">
+<style>
+@font-face{font-family:"WenKai";src:url(data:font/woff2;base64,__FONT_B64__) format("woff2");font-display:block}
+:root{
+  --paper:#ECEBE6;--surface:#F7F6F2;--ink:#24231F;--ink-soft:#6C6A63;--line:#D5D2C8;
+  --accent:#2C4775;--on-accent:#F7F6F2;--zhu:#B03A2E;--hl:rgba(44,71,117,.13);
+  --guide:rgba(36,35,31,.15);--stroke:#1C1B18;--grid:rgba(176,58,46,.28);
+  --sutra-font:"WenKai","Kaiti TC","BiauKai","DFKai-SB",serif;
+  --fs:26px;--nfs:18px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#16203A;--surface:#1D2946;--ink:#E8E0C8;--ink-soft:#A39E89;--line:#2F3D66;
+    --accent:#D3B169;--on-accent:#16203A;--zhu:#C9634F;--hl:rgba(211,177,105,.17);
+    --guide:rgba(211,177,105,.2);--stroke:#D8B86C;--grid:rgba(211,177,105,.22);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16203A;--surface:#1D2946;--ink:#E8E0C8;--ink-soft:#A39E89;--line:#2F3D66;
+  --accent:#D3B169;--on-accent:#16203A;--zhu:#C9634F;--hl:rgba(211,177,105,.17);
+  --guide:rgba(211,177,105,.2);--stroke:#D8B86C;--grid:rgba(211,177,105,.22);
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);background:var(--paper)}
+body{height:100%;margin:0;background:var(--paper);color:var(--ink);font-family:"WenKai","Kaiti TC","BiauKai",serif;-webkit-tap-highlight-color:transparent;overflow:hidden}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column}
+
+header{display:flex;align-items:center;gap:6px;padding:8px 8px 8px 8px;border-bottom:1px solid var(--line)}
+.chap-btn{background:none;border:0;min-height:44px;padding:0 8px;display:flex;align-items:center;gap:4px;font-size:19px;letter-spacing:.12em;cursor:pointer;white-space:nowrap;border-radius:22px}
+.chap-btn svg{width:16px;height:16px;color:var(--ink-soft)}
+.tabs{display:flex;gap:2px;margin-left:auto}
+.tab{background:none;border:0;font-size:17px;padding:8px 9px;min-height:44px;color:var(--ink-soft);border-bottom:2px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.icon-btn{background:none;border:0;min-width:44px;min-height:44px;display:grid;place-items:center;color:var(--ink-soft);cursor:pointer;border-radius:22px}
+.icon-btn svg{width:22px;height:22px}
+
+main{flex:1;min-height:0;position:relative}
+.view{position:absolute;inset:0;display:none;flex-direction:column}
+.view.on{display:flex}
+
+/* 讀誦 */
+.scroll{flex:1;min-height:0;overflow:auto;padding:28px 22px;overscroll-behavior:contain}
+.scroll.v{writing-mode:vertical-rl;overflow-x:auto;overflow-y:hidden}
+.scroll.h .sutra,.scroll.h .prose{max-width:30em;margin:0 auto}
+.sutra{font-family:var(--sutra-font);font-size:var(--fs);line-height:2.15;letter-spacing:.14em}
+.sutra .title{font-size:1.18em;font-weight:400;margin:0 0 .9em;letter-spacing:.2em}
+.scroll.v .sutra .title{margin:0 0 0 .9em}
+.sutra .body{margin:0}
+.cl{border-radius:5px;cursor:pointer;transition:background-color .25s,color .25s}
+.cl.on{background:var(--hl);color:var(--accent)}
+.imark{font-size:.5em;color:var(--zhu);cursor:pointer;padding:0 .15em;vertical-align:super;letter-spacing:0}
+.scroll.v .imark{vertical-align:baseline}
+.after{font-family:"WenKai","Kaiti TC","BiauKai",serif;margin:1.6em 0 0;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;letter-spacing:.08em}
+.scroll.v .after{margin:0 1.6em 0 0}
+.notes-toggle{font-size:17px;min-height:44px;min-width:44px;padding:8px 16px;border-radius:22px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.notes-toggle[aria-expanded="true"]{background:var(--accent);color:var(--on-accent)}
+.chap-nav{display:flex;gap:10px;flex-wrap:wrap}
+.notes-inline{flex-basis:100%}
+.notes{font-family:var(--sutra-font);font-size:var(--nfs);line-height:2;letter-spacing:.06em}
+.notes p{margin:0 0 1em}
+.scroll.v .notes p{margin:0 0 0 1em}
+.notes .nhead{color:var(--ink-soft);font-size:.86em;letter-spacing:.2em;margin-bottom:.4em}
+.notes .inl{color:var(--ink-soft);font-size:.92em}
+.ns{border-radius:4px;transition:background-color .25s,color .25s}
+.ns.on{background:var(--hl);color:var(--accent)}
+.pp{display:inline-grid;place-items:center;width:44px;height:44px;margin:-10px 2px -10px -6px;border:0;background:none;color:var(--accent);cursor:pointer;vertical-align:middle;border-radius:22px;font-size:14px}
+.scroll.v .pp{margin:-6px -10px 2px -10px}
+.pp svg{width:16px;height:16px}
+.prose{font-family:var(--sutra-font);font-size:var(--nfs);line-height:2.1;letter-spacing:.08em}
+.prose h2{font-size:1.3em;font-weight:400;letter-spacing:.25em;margin:0 0 1em}
+.scroll.v .prose h2{margin:0 0 0 1em}
+.prose p{margin:0 0 1em;text-indent:2em}
+.scroll.v .prose p{margin:0 0 0 .6em}
+.prose .sign{text-align:end;text-indent:0;color:var(--ink-soft)}
+
+.bar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.btn{font-size:16px;min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--line);background:transparent;cursor:pointer;white-space:nowrap}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{flex:1;background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.sq{width:44px;padding:0}
+.btn.rate{font-size:14px;padding:0 10px}
+
+/* 描寫 */
+.trace-top{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px 0 16px;color:var(--ink-soft);font-size:15px}
+.trace-top b{color:var(--ink);font-weight:400}
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px 16px}
+.cell{position:relative;background:var(--surface);border:1.5px solid var(--zhu);box-shadow:0 1px 0 var(--line)}
+.cell canvas{position:absolute;inset:0;width:100%;height:100%}
+#ink{touch-action:none;cursor:crosshair}
+.hint{color:var(--ink-soft);font-size:14px;text-align:center;margin:0 16px 4px;min-height:1.2em}
+
+/* 全螢幕面板：整篇、注釋、章節 */
+.overlay{position:fixed;inset:0;z-index:20;background:var(--paper);display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.overlay.on{display:flex}
+.overlay header{gap:8px;padding-left:4px}
+.overlay h2{font-size:18px;font-weight:400;margin:0;letter-spacing:.15em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.overlay .count{color:var(--ink-soft);font-size:15px;margin-left:auto;white-space:nowrap}
+.grid-wrap{flex:1;min-height:0;overflow:auto;padding:12px 16px 24px}
+.grid-wrap.v{writing-mode:vertical-rl;overflow-x:auto;overflow-y:hidden}
+.grp{margin:0 0 18px}
+.grid-wrap.v .grp{margin:0 0 0 18px}
+.grp-h{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--ink-soft);font-size:15px}
+.grp-h b{color:var(--ink);font-weight:400;letter-spacing:.12em}
+.grp-h .btn{font-size:14px;padding:0 12px;margin-inline-start:auto}
+.grp canvas{display:block;cursor:pointer;touch-action:manipulation}
+.menu-list{flex:1;min-height:0;overflow:auto;padding:4px 0 24px}
+.mi{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:6px 20px;border:0;border-bottom:1px solid var(--line);background:none;text-align:start;cursor:pointer;font-size:17px;letter-spacing:.08em}
+.mi .no{color:var(--ink-soft);min-width:6.4em}
+.mi .pg{margin-left:auto;color:var(--ink-soft);font-size:13px;letter-spacing:0;white-space:nowrap}
+.mi.cur{background:var(--hl);color:var(--accent)}
+.mi.cur .no{color:var(--accent)}
+
+/* 設定 */
+.sheet-bg{position:fixed;inset:0;z-index:30;background:rgba(10,12,20,.38);display:none}
+.sheet-bg.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;background:var(--surface);border-radius:16px 16px 0 0;padding:6px 20px calc(18px + env(safe-area-inset-bottom,0px));max-height:85%;overflow:auto;transform:translateY(105%);transition:transform .25s ease}
+.sheet.on{transform:none}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:6px auto 10px}
+.sheet h3{font-size:15px;font-weight:400;color:var(--ink-soft);margin:18px 0 8px}
+.row{display:flex;align-items:center;gap:12px}
+.row input[type=range]{flex:1;accent-color:var(--accent);height:32px}
+.row output{min-width:3.2em;text-align:right;font-variant-numeric:tabular-nums}
+.seg{display:flex;border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.seg button{flex:1;min-height:44px;border:0;background:none;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.opt{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer}
+.opt input{accent-color:var(--accent);width:20px;height:20px}
+.opt small{color:var(--ink-soft)}
+[hidden]{display:none!important}
+.sel{width:100%;min-height:44px;font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.seg+.seg,.seg+.sel,.sel+.row,.seg+.row{margin-top:10px}
+.seg button:disabled{opacity:.4;cursor:default}
+.note{font-size:13px;color:var(--ink-soft);line-height:1.6;margin:6px 0 0}
+.danger{color:var(--zhu);border-color:var(--zhu)}
+
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:15px;line-height:1.5;max-width:88%;z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (min-width:720px){.chap-btn{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="chap-btn" id="openMenu" aria-label="章節選單"><span id="chapLabel">第一章</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-view="read" aria-selected="true">讀誦</button>
+      <button class="tab" role="tab" data-view="trace" aria-selected="false">描寫</button>
+    </nav>
+    <button class="icon-btn" id="themeBtn" aria-label="切換夜間模式"></button>
+    <button class="icon-btn" id="openSettings" aria-label="設定">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <section class="view on" id="view-read" aria-label="讀誦">
+      <div class="scroll v" id="scroll">
+        <div class="sutra" id="sutra"></div>
+        <div class="after" id="after">
+          <button class="notes-toggle" id="notesToggle" aria-expanded="false">黃元吉注釋</button>
+          <div class="chap-nav">
+            <button class="btn" id="prevChap">上一章</button>
+            <button class="btn" id="nextChap">下一章</button>
+          </div>
+          <div class="notes-inline" id="notesInline" hidden></div>
+        </div>
+      </div>
+      <div class="bar">
+        <button class="btn sq" id="fsDown" aria-label="字縮小">小</button>
+        <button class="btn sq" id="fsUp" aria-label="字放大">大</button>
+        <button class="btn primary" id="play">朗讀</button>
+        <button class="btn sq" id="stop" aria-label="停止" disabled>
+          <svg viewBox="0 0 24 24" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></svg>
+        </button>
+        <button class="btn rate" id="rate">語速 0.8</button>
+      </div>
+    </section>
+
+    <section class="view" id="view-trace" aria-label="描寫">
+      <div class="trace-top">
+        <span id="pos"></span>
+        <button class="btn" id="openSheet">整篇</button>
+      </div>
+      <div class="stage" id="stage">
+        <div class="cell" id="cell">
+          <canvas id="guide"></canvas>
+          <canvas id="ink"></canvas>
+        </div>
+      </div>
+      <p class="hint" id="hint">用手指沿著淡字描寫</p>
+      <div class="bar">
+        <button class="btn" id="prev">上一字</button>
+        <button class="btn" id="undo">復原</button>
+        <button class="btn" id="clear">清除</button>
+        <button class="btn primary" id="next">下一字</button>
+      </div>
+    </section>
+
+    <section class="view" id="view-preface" aria-label="自序">
+      <div class="scroll v" id="prefScroll"><div class="prose" id="preface"></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="sheetView" aria-label="整篇">
+  <header>
+    <button class="icon-btn" id="closeSheet" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>整篇</h2>
+    <span class="count" id="doneCount"></span>
+  </header>
+  <div class="grid-wrap v" id="gridWrap"></div>
+</div>
+
+<div class="overlay" id="notesView" aria-label="黃元吉注釋">
+  <header>
+    <button class="icon-btn" id="closeNotes" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2 id="notesTitle">黃元吉注釋</h2>
+  </header>
+  <div class="scroll v" id="notesScroll"></div>
+  <div class="bar">
+    <button class="btn primary" id="nPlay">朗讀注釋</button>
+    <button class="btn sq" id="nStop" aria-label="停止" disabled>
+      <svg viewBox="0 0 24 24" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="overlay" id="menuView" aria-label="章節">
+  <header>
+    <button class="icon-btn" id="closeMenu" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>道德經</h2>
+    <span class="count" id="menuCount"></span>
+  </header>
+  <div class="menu-list" id="menuList"></div>
+</div>
+
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="settings" role="dialog" aria-label="設定">
+  <div class="grab"></div>
+  <h3>外觀</h3>
+  <div class="seg" id="themeSeg">
+    <button data-theme-opt="auto" aria-pressed="true">跟隨系統</button>
+    <button data-theme-opt="light" aria-pressed="false">日間</button>
+    <button data-theme-opt="dark" aria-pressed="false">夜間</button>
+  </div>
+  <h3>朗讀聲音</h3>
+  <div class="seg" id="engineSeg">
+    <button data-engine="claude" aria-pressed="false">Claude 語音</button>
+    <button data-engine="device" aria-pressed="false">手機語音</button>
+    <button data-engine="rec" aria-pressed="false" hidden>預錄</button>
+  </div>
+  <div class="seg" id="cvoiceSeg">
+    <button data-cvoice="buttery" aria-pressed="false">柔順</button>
+    <button data-cvoice="airy" aria-pressed="false">輕盈</button>
+    <button data-cvoice="glassy" aria-pressed="false">清亮</button>
+    <button data-cvoice="rounded" aria-pressed="false">圓潤</button>
+  </div>
+  <select class="sel" id="dvoiceSel" aria-label="手機語音"></select>
+  <div class="row" id="pitchRow"><span>音高</span><input type="range" id="pitchRange" min="0.7" max="1.3" step="0.05" aria-label="音高"><output id="pitchOut"></output></div>
+  <div class="row" style="margin-top:10px"><button class="btn" id="testVoice">試聽</button></div>
+  <p class="note" id="voiceNote"></p>
+  <h3>朗讀注釋</h3>
+  <label class="opt"><input type="checkbox" id="readNotes"> 念完經文接著念黃元吉注釋</label>
+  <p class="note">注釋很長，隨時可按停止。也可以打開注釋，點段落前的 ▶ 從那一段開始念。注釋沒有預錄，會用 Claude 語音或手機語音朗讀。</p>
+  <h3>經文字級</h3>
+  <div class="row"><input type="range" id="fsRange" min="16" max="60" step="1" aria-label="經文字級"><output id="fsOut"></output></div>
+  <h3>注釋字級</h3>
+  <div class="row"><input type="range" id="nfsRange" min="14" max="40" step="1" aria-label="注釋字級"><output id="nfsOut"></output></div>
+  <h3>排版</h3>
+  <div class="seg" id="layoutSeg">
+    <button data-layout="v" aria-pressed="true">直排</button>
+    <button data-layout="h" aria-pressed="false">橫排</button>
+  </div>
+  <h3>字體</h3>
+  <label class="opt"><input type="radio" name="font" value="wenkai"> 霞鶩文楷 <small>內建</small></label>
+  <label class="opt"><input type="radio" name="font" value="user" id="userFontRadio" disabled> <span id="userFontName">自訂字體 <small>尚未選擇</small></span></label>
+  <label class="opt"><input type="radio" name="font" value="system"> 裝置內建楷體 <small>依手機而定</small></label>
+  <div class="row" style="margin-top:6px">
+    <button class="btn" id="pickFont">選擇字體檔…</button>
+    <button class="btn" id="removeFont" hidden>移除</button>
+    <input type="file" id="fontFile" hidden>
+  </div>
+  <p class="note">可選 .ttf、.otf、.woff 或 .woff2。字體只存在這支手機的瀏覽器裡，換裝置要重新選一次。經文、注釋與描寫的淡字都會改用這套字體。</p>
+  <h3>描寫筆畫粗細</h3>
+  <div class="row"><input type="range" id="penRange" min="2" max="8" step="0.5" aria-label="筆畫粗細"><output id="penOut"></output></div>
+  <h3>描寫紀錄</h3>
+  <button class="btn danger" id="wipe">清除所有描寫</button>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+// 經文、注釋、自序：build.py 由 data/ 內嵌（已套用 data/corrections.json）
+// {chapters:[{n, title, text, inline:[{after, text}], notes:[段落…]}], preface:[段落…]}
+var DATA=/*__DATA__*/null;
+var NCH=DATA.chapters.length;
+var CJK=/[\u3400-\u9fff\uf900-\ufaff]|[\ud840-\ud8bf][\udc00-\udfff]/g;
+var CLAUSE=/[^，。：；！？]+(?:[，。：；！？]」?)?/g;
+function cnNum(n){
+  var d="〇一二三四五六七八九";
+  if(n<10)return d.charAt(n);
+  var t=Math.floor(n/10),u=n%10;
+  return (t===1?"":d.charAt(t))+"十"+(u?d.charAt(u):"");
+}
+function chapName(n){return "第"+cnNum(n)+"章";}
+
+// 讀音校正：畫面顯示原文，送給語音引擎的是讀音正確的替代字（只用於經文，依序套用）
+var SAY=[
+  [/所惡/g,"所務"],[/惡之/g,"務之"],
+  [/長而不宰/g,"掌而不宰"],[/故長。/g,"故掌。"],[/不長。/g,"不掌。"],[/官長/g,"官掌"],[/長之育之/g,"掌之育之"],[/成器長/g,"成器掌"],
+  [/為吾有身/g,"位吾有身"],[/為腹不為目/g,"位腹不位目"],[/既以為人/g,"既以位人"],
+  [/樂與餌/g,"月與餌"],[/數窮/g,"碩窮"],[/將軍/g,"匠軍"],[/行無行/g,"行無杭"],
+  [/所處/g,"所觸"],[/處/g,"楚"],
+  [/夫/g,"扶"],[/丈扶/g,"丈夫"],
+  [/強為/g,"搶為"],[/強行/g,"搶行"],
+  [/好還/g,"號還"],[/好徑/g,"號徑"],[/好靜/g,"號靜"],
+  [/幾於/g,"機於"],[/幾成/g,"機成"],[/幾喪/g,"機喪"],
+  [/相和/g,"相賀"],[/衣被/g,"衣披"],[/被褐/g,"披褐"],[/萬乘/g,"萬剩"],[/重積德/g,"蟲積德"],[/無間/g,"無見"],
+  [/畜/g,"蓄"],[/載營魄/g,"在營魄"],[/終朝/g,"終招"],[/塞其兌/g,"色其兌"],[/舍/g,"捨"],[/泊兮/g,"博兮"],
+  [/歙/g,"吸"],[/埏埴/g,"山直"],[/橐龠/g,"駝月"],[/兕/g,"四"],[/螫/g,"釋"],[/嗄/g,"煞"],[/朘/g,"最"],
+  [/跂/g,"企"],[/嗇/g,"色"],[/牝/g,"聘"],[/飂/g,"遼"],[/谿/g,"溪"],[/皦/g,"皎"],[/惵惵/g,"蝶蝶"]
+];
+function spoken(t){SAY.forEach(function(r){t=t.replace(r[0],r[1]);});return t;}
+function spokenNote(t){return t;}
+
+var $=function(id){return document.getElementById(id);};
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}}
+function unstore(k){try{localStorage.removeItem(k);}catch(e){}}
+var toastT;
+function toast(msg,ms){var t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("on");},ms||2600);}
+
+var S=Object.assign({fs:26,nfs:18,layout:"v",font:"wenkai",pen:4,rate:0.8,theme:"auto",engine:"auto",cvoice:"buttery",dvoice:"",pitch:1,readNotes:false},load("dd.set",{}));
+function saveS(){store("dd.set",S);}
+
+/* ---------- 章節資料 ---------- */
+var CACHE={};
+function CH(n){
+  if(CACHE[n])return CACHE[n];
+  var d=DATA.chapters[n-1];
+  var head=chapName(n)+"　"+d.title;
+  var clauses=[head].concat(d.text.match(CLAUSE)||[]);
+  var chars=d.text.match(CJK)||[];
+  var notes=d.notes.map(function(p){return p.match(/[^。！？；]+(?:[。！？；]」?)?|[。！？；」]+/g)||[p];});
+  return (CACHE[n]={n:n,d:d,head:head,clauses:clauses,chars:chars,notes:notes});
+}
+var cn=Math.min(NCH,Math.max(1,load("dd.ch",1)|0));   // 讀誦中的章
+var tpos=load("dd.idx",{c:1,i:0});                      // 描寫位置
+if(!tpos||typeof tpos!=="object")tpos={c:1,i:0};
+tpos.c=Math.min(NCH,Math.max(1,tpos.c|0));tpos.i=Math.max(0,tpos.i|0);
+var view="read";
+
+/* ---------- 日間／夜間 ---------- */
+var mq=window.matchMedia("(prefers-color-scheme: dark)");
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>';
+var PLAY='<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
+function isDark(){return S.theme==="dark"||(S.theme==="auto"&&mq.matches);}
+function applyTheme(){
+  var root=document.documentElement;
+  if(S.theme==="auto")root.removeAttribute("data-theme");else root.setAttribute("data-theme",S.theme);
+  var dark=isDark();
+  var tb=$("themeBtn");
+  tb.innerHTML=dark?SUN:MOON;tb.setAttribute("aria-label",dark?"切換日間模式":"切換夜間模式");
+  document.querySelectorAll("#themeSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.themeOpt===S.theme));});
+  if(typeof onTheme==="function")onTheme();
+}
+
+/* ---------- 字體 ---------- */
+var STACKS={
+  wenkai:'"WenKai","Kaiti TC","BiauKai",serif',
+  user:'"UserFont","WenKai",serif',
+  system:'"BiauKai","DFKai-SB","Kaiti TC","STKaiti","KaiTi","Noto Serif TC",serif'
+};
+var userFontName=null;
+function fontStack(){return STACKS[S.font]||STACKS.wenkai;}
+function applyFont(){
+  document.documentElement.style.setProperty("--sutra-font",fontStack());
+  document.querySelectorAll('input[name=font]').forEach(function(r){r.checked=(r.value===S.font);});
+  return document.fonts.load("40px "+fontStack(),CH(tpos.c).chars.join("")).catch(function(){}).then(function(){redrawGuide();renderGrid();});
+}
+// IndexedDB 存放使用者字體
+function idb(){return new Promise(function(res,rej){try{var q=indexedDB.open("daodejing",1);q.onupgradeneeded=function(){q.result.createObjectStore("kv");};q.onsuccess=function(){res(q.result);};q.onerror=function(){rej(q.error);};}catch(e){rej(e);}});}
+function idbGet(k){return idb().then(function(db){return new Promise(function(res){var r=db.transaction("kv").objectStore("kv").get(k);r.onsuccess=function(){res(r.result);};r.onerror=function(){res(null);};});}).catch(function(){return null;});}
+function idbSet(k,v){return idb().then(function(db){return new Promise(function(res){var tx=db.transaction("kv","readwrite");tx.objectStore("kv").put(v,k);tx.oncomplete=function(){res(true);};tx.onerror=function(){res(false);};});}).catch(function(){return false;});}
+function idbDel(k){return idb().then(function(db){db.transaction("kv","readwrite").objectStore("kv").delete(k);}).catch(function(){});}
+var userFace=null;
+function installUserFont(name,buf){
+  var face=new FontFace("UserFont",buf);
+  return face.load().then(function(f){
+    if(userFace){try{document.fonts.delete(userFace);}catch(e){}}
+    document.fonts.add(f);userFace=f;userFontName=name;
+    $("userFontRadio").disabled=false;
+    $("userFontName").innerHTML="";$("userFontName").append(name+" ");
+    var sm=document.createElement("small");sm.textContent="自訂";$("userFontName").append(sm);
+    $("removeFont").hidden=false;
+  });
+}
+$("pickFont").onclick=function(){$("fontFile").click();};
+$("fontFile").onchange=function(e){
+  var f=e.target.files&&e.target.files[0];e.target.value="";
+  if(!f)return;
+  toast("正在載入字體…",8000);
+  f.arrayBuffer().then(function(buf){
+    return installUserFont(f.name.replace(/\.[^.]+$/,""),buf.slice(0)).then(function(){
+      S.font="user";saveS();
+      idbSet("userFont",{name:userFontName,buf:buf}).then(function(ok){if(!ok)toast("字體已套用，但這台裝置無法記住它，下次需重選");});
+      return applyFont().then(function(){toast("已改用「"+userFontName+"」");});
+    });
+  }).catch(function(){toast("這個檔案無法當作字體使用，請選 .ttf、.otf、.woff 或 .woff2 檔",4000);});
+};
+$("removeFont").onclick=function(){
+  if(userFace){try{document.fonts.delete(userFace);}catch(e){}userFace=null;}
+  idbDel("userFont");userFontName=null;
+  $("userFontRadio").disabled=true;$("userFontName").innerHTML='自訂字體 <small>尚未選擇</small>';$("removeFont").hidden=true;
+  if(S.font==="user"){S.font="wenkai";saveS();}
+  applyFont();toast("已移除自訂字體");
+};
+document.querySelectorAll('input[name=font]').forEach(function(r){r.onchange=function(){S.font=r.value;saveS();applyFont();};});
+
+/* ---------- 讀誦：版面 ---------- */
+var notesEl=null,notesOpen=false;
+function buildRead(){
+  var c=CH(cn),el=$("sutra");el.innerHTML="";
+  var h=document.createElement("p");h.className="title";
+  var t=document.createElement("span");t.className="cl";t.dataset.i="0";t.textContent=c.head;h.appendChild(t);
+  var b=document.createElement("p");b.className="body";
+  var off=0,inl=c.d.inline||[];
+  for(var i=1;i<c.clauses.length;i++){
+    var s=document.createElement("span");s.className="cl";s.dataset.i=String(i);
+    var txt=c.clauses[i],from=0;
+    inl.forEach(function(x){
+      if(x.after>off&&x.after<=off+txt.length){
+        s.append(txt.slice(from,x.after-off));from=x.after-off;
+        var m=document.createElement("span");m.className="imark";m.textContent="※";m.title="經文附註";m.setAttribute("role","button");m.setAttribute("aria-label","經文附註");
+        s.appendChild(m);
+      }
+    });
+    s.append(txt.slice(from));
+    off+=txt.length;b.appendChild(s);
+  }
+  el.append(h,b);
+  // 注釋
+  notesEl=document.createElement("div");notesEl.className="notes";
+  if(inl.length){
+    var nh=document.createElement("p");nh.className="nhead";nh.textContent="經文附註";notesEl.appendChild(nh);
+    inl.forEach(function(x){
+      var p=document.createElement("p");p.className="inl";
+      var before=c.d.text.slice(0,x.after).replace(/[，。：；！？」]+$/,"").match(/[^，。：；！？「]*$/)[0];
+      p.textContent=(x.after>=c.d.text.length-1?"經文末注：":"「"+before+"」下注：")+x.text;notesEl.appendChild(p);
+    });
+    var nh2=document.createElement("p");nh2.className="nhead";nh2.textContent="注釋";notesEl.appendChild(nh2);
+  }
+  c.notes.forEach(function(sents,pi){
+    var p=document.createElement("p");p.dataset.p=String(pi);
+    var pb=document.createElement("button");pb.className="pp";pb.innerHTML=PLAY;pb.dataset.p=String(pi);pb.setAttribute("aria-label","從這一段開始朗讀注釋");
+    p.appendChild(pb);
+    sents.forEach(function(st,si){var sp=document.createElement("span");sp.className="ns";sp.dataset.p=String(pi);sp.dataset.s=String(si);sp.textContent=st;p.appendChild(sp);});
+    notesEl.appendChild(p);
+  });
+  $("notesTitle").textContent="黃元吉注釋　"+chapName(cn);
+  $("chapLabel").textContent=chapName(cn);
+  $("prevChap").disabled=cn<=1;$("nextChap").disabled=cn>=NCH;
+  placeNotes();
+}
+// 橫排：注釋在經文下方展開；直排：注釋另開面板
+function placeNotes(){
+  if(!notesEl)return;
+  var tg=$("notesToggle");
+  if(S.layout==="h"){
+    $("notesView").classList.remove("on");
+    $("notesInline").appendChild(notesEl);$("notesInline").hidden=!notesOpen;
+    tg.setAttribute("aria-expanded",String(notesOpen));tg.textContent=notesOpen?"收合注釋":"黃元吉注釋";
+  }else{
+    $("notesInline").hidden=true;$("notesScroll").appendChild(notesEl);
+    tg.setAttribute("aria-expanded","false");tg.textContent="黃元吉注釋";
+  }
+}
+function openNotes(){
+  if(S.layout==="h"){notesOpen=true;placeNotes();}
+  else{$("notesView").classList.add("on");}
+}
+function notesVisible(){return S.layout==="h"?notesOpen:$("notesView").classList.contains("on");}
+$("notesToggle").onclick=function(){
+  if(S.layout==="h"){notesOpen=!notesOpen;placeNotes();if(notesOpen)$("notesToggle").scrollIntoView({block:"start",behavior:"smooth"});}
+  else openNotes();
+};
+$("closeNotes").onclick=function(){$("notesView").classList.remove("on");};
+function applyLayout(){
+  [$("scroll"),$("prefScroll"),$("notesScroll")].forEach(function(sc){sc.className="scroll "+S.layout;sc.scrollLeft=0;sc.scrollTop=0;});
+  $("gridWrap").className="grid-wrap "+S.layout;
+  document.querySelectorAll("#layoutSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.layout===S.layout));});
+  placeNotes();
+}
+function applyFs(){
+  document.documentElement.style.setProperty("--fs",S.fs+"px");
+  document.documentElement.style.setProperty("--nfs",S.nfs+"px");
+  $("fsRange").value=S.fs;$("fsOut").textContent=S.fs+" px";
+  $("nfsRange").value=S.nfs;$("nfsOut").textContent=S.nfs+" px";
+}
+$("fsUp").onclick=function(){S.fs=Math.min(60,S.fs+3);applyFs();saveS();};
+$("fsDown").onclick=function(){S.fs=Math.max(16,S.fs-3);applyFs();saveS();};
+$("fsRange").oninput=function(e){S.fs=+e.target.value;applyFs();saveS();};
+$("nfsRange").oninput=function(e){S.nfs=+e.target.value;applyFs();saveS();};
+document.querySelectorAll("#layoutSeg button").forEach(function(b){b.onclick=function(){S.layout=b.dataset.layout;saveS();applyLayout();renderGrid(true);};});
+$("readNotes").onchange=function(e){S.readNotes=e.target.checked;saveS();};
+function gotoRead(n){
+  n=Math.min(NCH,Math.max(1,n));
+  if(n!==cn||!notesEl){stopAll();cn=n;store("dd.ch",cn);notesOpen=false;buildRead();}
+  var sc=$("scroll");sc.scrollLeft=0;sc.scrollTop=0;
+}
+$("prevChap").onclick=function(){go("read",cn-1);};
+$("nextChap").onclick=function(){go("read",cn+1);};
+
+/* ---------- 讀誦：語音 ---------- */
+// 引擎：rec = 預錄；claude = Claude 語音（tts 能力，整句一行送出）；native = 手機的 speechSynthesis（逐句送出）
+// 位置：mode "jing"（經文，cur 為子句序）或 "note"（注釋，np 段、nsi 句）
+var RATES=[0.6,0.7,0.8,1,1.2];
+var cur=0,mode="jing",np=0,nsi=0,state="idle",token=0,voice=null,eng=null,claudeTts=null,claudeOff=false,dvoices=[];
+// 預錄朗讀：build.py 由 audio/ 內嵌 {voice, chapters:{"1":[{id:"起-迄", type, b64}]}}；沒有音檔時為 null
+var REC=/*__AUDIO__*/null;
+var VOICE_NAMES={"zh-TW-HsiaoYuNeural":"曉雨","zh-TW-HsiaoChenNeural":"曉臻","zh-TW-YunJheNeural":"雲哲"};
+var recUrls={},recRanges={},audio=null,recIdx=0,recPos=0;
+function recReady(n){return !!(REC&&REC.chapters&&(n==null||(REC.chapters[n]&&REC.chapters[n].length)));}
+function recName(){return (REC&&VOICE_NAMES[REC.voice])||"";}
+function recInit(n){
+  if(!audio){audio=new Audio();audio.preload="auto";}
+  if(recUrls[n])return;
+  var items=REC.chapters[n];
+  recUrls[n]=items.map(function(it){
+    var bin=atob(it.b64),u8=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([u8],{type:it.type||"audio/mpeg"}));
+  });
+  recRanges[n]=items.map(function(it){var p=String(it.id).split("-");return [+p[0],+p[1]];});
+}
+// 錄音以 0.8 為原速；語速設定換算成播放速度（Chrome 預設保持音高）
+function recRate(){return S.rate/0.8;}
+function recFind(i){var r=recRanges[cn];for(var k=0;k<r.length;k++)if(r[k][0]<=i&&i<=r[k][1])return k;return 0;}
+function recPlay(k,my,pos){
+  if(my!==token)return;
+  var urls=recUrls[cn];
+  if(k>=urls.length){jingDone(my);return;}
+  recIdx=k;recPos=0;
+  var r=recRanges[cn][k];cur=r[0];mark(r[0],r[1]);
+  audio.onended=function(){
+    if(my!==token)return;
+    recIdx=k+1;recPos=0;
+    setTimeout(function(){recPlay(k+1,my,0);},k===0?600:420);
+  };
+  audio.src=urls[k];
+  audio.defaultPlaybackRate=audio.playbackRate=recRate();
+  if(pos)audio.currentTime=pos;
+  var pr=audio.play();
+  if(pr&&pr.catch)pr.catch(function(e){
+    if(my!==token||(e&&e.name==="AbortError"))return;
+    finish();toast("無法播放預錄朗讀，請再按一次「朗讀」");
+  });
+}
+var hasNative=("speechSynthesis" in window)&&typeof SpeechSynthesisUtterance!=="undefined";
+function vlang(v){return (v.lang||"").replace("_","-").toLowerCase();}
+function zhRank(v){
+  var l=vlang(v);
+  if(l==="zh-tw")return 0;
+  if(/hant/.test(l))return 1;
+  if(l==="zh-hk"||/yue/.test(l))return 3;
+  if(l.indexOf("zh")===0||l.indexOf("cmn")===0)return 2;
+  return -1;
+}
+function pickVoice(){
+  if(!hasNative)return;
+  var vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
+  dvoices=vs.filter(function(v){return zhRank(v)>=0;}).sort(function(a,b){
+    return zhRank(a)-zhRank(b)||((a.localService===false)===(b.localService===false)?0:(a.localService===false?-1:1));
+  });
+  voice=dvoices.find(function(v){return v.voiceURI===S.dvoice;})||dvoices[0]||null;
+  renderVoiceUI();
+}
+// 使用者想要的引擎（auto 的順序：預錄 → Claude 語音 → 手機語音）
+function wantEngine(){
+  var w=S.engine;
+  if(w==="auto")w=recReady()?"rec":"claude";
+  if(w==="rec")return recReady()?"rec":(claudeTts?"claude":"device");
+  if(w==="claude")return claudeTts?"claude":"device";
+  return "device";
+}
+// 實際可用的引擎；使用者在頁面權限關掉 Claude 語音時，不自動改用手機語音
+function engineNow(){
+  var w=wantEngine();
+  if(w==="rec")return recReady(cn)?"rec":(claudeTts?(claudeOff?null:"claude"):(hasNative?"native":null));
+  if(w==="claude")return claudeOff?null:"claude";
+  return hasNative?"native":null;
+}
+// 注釋沒有預錄：預錄引擎時改用 Claude 語音（可用時）或手機語音
+function noteEngine(){
+  var e=engineNow();
+  if(e!=="rec")return e;
+  if(claudeTts)return claudeOff?null:"claude";
+  return hasNative?"native":null;
+}
+function clearMarks(){document.querySelectorAll(".cl.on,.ns.on").forEach(function(e){e.classList.remove("on");});}
+function mark(a,b){
+  clearMarks();
+  if(a<0)return;
+  if(b==null)b=a;
+  var first=null;
+  for(var i=a;i<=b;i++){var el=document.querySelector('.cl[data-i="'+i+'"]');if(el){el.classList.add("on");if(!first)first=el;}}
+  if(first)first.scrollIntoView({block:"center",inline:"center",behavior:"smooth"});
+}
+function markNote(p,s){
+  clearMarks();
+  var el=notesEl&&notesEl.querySelector('.ns[data-p="'+p+'"][data-s="'+s+'"]');
+  if(el){el.classList.add("on");if(notesVisible())el.scrollIntoView({block:"center",inline:"center",behavior:"smooth"});}
+}
+function setUI(){
+  $("play").textContent=state==="playing"?"暫停":(state==="paused"?"繼續":"朗讀");
+  $("stop").disabled=$("nStop").disabled=(state==="idle");
+  $("nPlay").textContent=state==="playing"?"暫停":(state==="paused"?"繼續":"朗讀注釋");
+  $("rate").textContent="語速 "+(S.rate===1?"1.0":S.rate);
+}
+function utter(text){
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang=voice&&voice.lang?voice.lang:"zh-TW";if(voice)u.voice=voice;
+  u.rate=S.rate;u.pitch=S.pitch;
+  return u;
+}
+function nativeSay(i,my){
+  if(my!==token)return;
+  var cl=CH(cn).clauses;
+  if(i>=cl.length){jingDone(my);return;}
+  cur=i;mark(i);
+  var u=utter(spoken(cl[i]));
+  u.onend=function(){if(my!==token)return;setTimeout(function(){nativeSay(i+1,my);},(i===0||/[。：！？]」?$/.test(cl[i]))?380:120);};
+  u.onerror=nativeErr(my);
+  speechSynthesis.speak(u);
+}
+function nativeErr(my){return function(ev){if(my!==token)return;if(ev.error==="interrupted"||ev.error==="canceled")return;toast("朗讀中斷了，請再按一次「繼續」");state="paused";setUI();};}
+// 注釋逐句送出；太長的句子再依逗號切開，避免 Android 長句中斷
+function noteChunks(t){
+  if(t.length<=60)return [t];
+  var parts=t.match(/[^，、]+[，、]?/g)||[t],out=[],buf="";
+  parts.forEach(function(x){if(buf&&(buf+x).length>60){out.push(buf);buf="";}buf+=x;});
+  if(buf)out.push(buf);return out;
+}
+function nativeNote(p,s,my){
+  if(my!==token)return;
+  var ns=CH(cn).notes;
+  if(p>=ns.length){finish();return;}
+  if(s>=ns[p].length){setTimeout(function(){nativeNote(p+1,0,my);},600);return;}
+  mode="note";np=p;nsi=s;markNote(p,s);
+  var chunks=noteChunks(spokenNote(ns[p][s])),k=0;
+  (function next(){
+    if(my!==token)return;
+    if(k>=chunks.length){setTimeout(function(){nativeNote(p,s+1,my);},260);return;}
+    var u=utter(chunks[k++]);
+    u.onend=function(){if(my!==token)return;next();};
+    u.onerror=nativeErr(my);
+    speechSynthesis.speak(u);
+  })();
+}
+// 句末（。：！？）的子句序；章名自成一句
+function sentenceEnd(i){if(i===0)return 0;var cl=CH(cn).clauses,j=i;while(j<cl.length-1&&!/[。：！？]」?$/.test(cl[j]))j++;return j;}
+function claudeLines(from,withNotes){
+  var lines=[],cl=CH(cn).clauses;
+  for(var i=from;i<cl.length;){
+    var e=sentenceEnd(i);
+    lines.push({text:i===0?spoken(chapName(cn)+"，"+CH(cn).d.title+"。"):spoken(cl.slice(i,e+1).join("")),id:"j:"+i+"-"+e});
+    i=e+1;
+  }
+  if(withNotes)lines=lines.concat(noteLines(0,0));
+  return lines;
+}
+function noteLines(p,s){
+  var lines=[],ns=CH(cn).notes;
+  for(var a=p;a<ns.length;a++)for(var b=(a===p?s:0);b<ns[a].length;b++)lines.push({text:spokenNote(ns[a][b]),id:"n:"+a+":"+b});
+  return lines;
+}
+function claudeOpts(){return {voice:S.cvoice,rate:Math.max(0.7,S.rate),language:"zh-TW"};}
+function claudeFail(err){
+  var c=err&&err.code;
+  if(c==="stopped"){if(err.reason!=="replaced"&&state!=="paused")finish();return;}
+  if(c==="no_gesture"&&mode==="note"){state="paused";eng=null;setUI();toast("請按「繼續」朗讀注釋");return;}
+  finish();
+  if(c==="not_granted"){claudeOff=true;renderVoiceUI();noSpeech();}
+  else if(c==="unavailable"){claudeTts=null;renderVoiceUI();toast("目前無法使用 Claude 語音，已改用手機語音，請再按一次「朗讀」",5000);}
+  else if(c==="rate_limited")toast("朗讀次數暫時太多，請稍候再試",4000);
+  else if(c==="no_gesture")toast("請再按一次「朗讀」");
+  else if(c==="busy")toast("請稍候再試");
+  else toast("朗讀中斷了，請再按一次「朗讀」");
+}
+function claudeSpeak(lines,my){
+  claudeTts.speak(lines,claudeOpts()).then(function(){if(my===token&&state==="playing")finish();})
+    .catch(function(err){if(my===token)claudeFail(err);});
+}
+function finish(){state="idle";mode="jing";cur=0;np=0;nsi=0;clearMarks();setUI();}
+// 經文念完：開了「朗讀注釋」就接著念注釋
+function jingDone(my){
+  if(my!==token)return;
+  if(S.readNotes&&CH(cn).notes.length){playNotes(0,0);return;}
+  finish();
+}
+function play(from){
+  eng=engineNow();
+  if(!eng){noSpeech();return;}
+  token++;var my=token;mode="jing";
+  if(eng==="native"){
+    speechSynthesis.cancel();
+    if(!voice&&speechSynthesis.getVoices().length)toast("這台手機找不到中文語音，請在系統設定的「文字轉語音」安裝中文（台灣）語音",5000);
+    state="playing";setUI();setTimeout(function(){nativeSay(from,my);},60);
+  }else if(eng==="rec"){
+    recInit(cn);state="playing";setUI();recPlay(recFind(from),my,0);
+  }else{
+    cur=from;state="playing";setUI();mark(from,sentenceEnd(from));
+    claudeSpeak(claudeLines(from,S.readNotes),my);
+  }
+}
+function playNotes(p,s){
+  var e=noteEngine();
+  if(!e){finish();noSpeech();return;}
+  if(eng==="rec"&&audio)audio.pause();
+  if(eng==="native"||e==="native"){try{speechSynthesis.cancel();}catch(x){}}
+  if(eng==="claude"&&claudeTts&&claudeTts.active&&claudeTts.active())claudeTts.stop().catch(function(){});
+  eng=e;token++;var my=token;mode="note";np=p;nsi=s;
+  state="playing";setUI();
+  if(!notesVisible())openNotes();
+  markNote(p,s);
+  if(e==="native")setTimeout(function(){nativeNote(p,s,my);},60);
+  else claudeSpeak(noteLines(p,s),my);
+}
+function pause(){
+  if(eng==="native"){token++;speechSynthesis.cancel();}
+  else if(eng==="rec"){token++;recPos=audio.ended?0:audio.currentTime;audio.pause();}
+  else if(eng==="claude"){claudeTts.pause().catch(function(){});}
+  state="paused";setUI();
+}
+function resume(){
+  if(eng==="claude"&&claudeTts&&claudeTts.active()){claudeTts.resume().catch(function(){});state="playing";setUI();}
+  else if(mode==="note")playNotes(np,nsi);
+  else if(eng==="rec"&&engineNow()==="rec"){token++;state="playing";setUI();recPlay(recIdx,token,recPos);}
+  else play(cur);
+}
+function stopAll(){
+  token++;
+  if(eng==="native"){try{speechSynthesis.cancel();}catch(e){}}
+  else if(eng==="rec"&&audio){audio.pause();}
+  else if(eng==="claude"&&claudeTts){claudeTts.stop().catch(function(){});}
+  finish();
+}
+function noSpeech(){
+  $("play").textContent="朗讀";
+  if(claudeOff)toast("這個頁面的 Claude 語音朗讀已關閉。如要改用手機語音，請到設定的「朗讀聲音」選擇",5000);
+  else toast("這個畫面無法朗讀。請在 Chrome 瀏覽器開啟這個網頁再試",5000);
+}
+$("play").onclick=function(){
+  if(state==="playing")pause();else if(state==="paused")resume();else play(cur);
+};
+$("stop").onclick=stopAll;
+$("nStop").onclick=stopAll;
+$("nPlay").onclick=function(){
+  if(state==="playing")pause();else if(state==="paused")resume();else playNotes(0,0);
+};
+$("rate").onclick=function(){
+  var k=RATES.indexOf(S.rate);S.rate=RATES[(k+1)%RATES.length];saveS();setUI();
+  if(state==="playing"){
+    if(eng==="rec")audio.defaultPlaybackRate=audio.playbackRate=recRate();
+    else if(eng==="native"){if(mode==="note")playNotes(np,nsi);else play(cur);}
+    else if(eng==="claude"&&claudeTts.setRate)claudeTts.setRate(Math.max(0.7,S.rate)).catch(function(){});
+  }
+};
+$("sutra").addEventListener("click",function(e){
+  if(e.target.closest(".imark")){openNotes();return;}
+  var el=e.target.closest(".cl");if(!el)return;
+  var i=+el.dataset.i;cur=i;
+  if(!engineNow()){mark(i);noSpeech();return;}
+  play(i);
+});
+function onNotesClick(e){
+  var b=e.target.closest(".pp");if(!b)return;
+  playNotes(+b.dataset.p,0);
+}
+$("notesInline").addEventListener("click",onNotesClick);
+$("notesScroll").addEventListener("click",onNotesClick);
+
+/* ---------- 朗讀聲音設定 ---------- */
+function renderVoiceUI(){
+  var w=wantEngine();
+  document.querySelectorAll("#engineSeg button").forEach(function(b){
+    b.setAttribute("aria-pressed",String(b.dataset.engine===w));
+    if(b.dataset.engine==="claude")b.disabled=!claudeTts;
+    if(b.dataset.engine==="rec"){b.hidden=!recReady();b.textContent=recName()?"預錄・"+recName():"預錄";}
+  });
+  document.querySelectorAll("#cvoiceSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.cvoice===S.cvoice));});
+  $("cvoiceSeg").hidden=(w!=="claude");
+  $("dvoiceSel").hidden=$("pitchRow").hidden=(w!=="device"||!dvoices.length);
+  var sel=$("dvoiceSel");sel.innerHTML="";
+  dvoices.forEach(function(v){
+    var o=document.createElement("option");o.value=v.voiceURI;
+    o.textContent=v.name+(v.localService===false?"（線上）":"");
+    o.selected=(voice===v);sel.appendChild(o);
+  });
+  $("pitchRange").value=S.pitch;$("pitchOut").textContent=S.pitch.toFixed(2);
+  var note;
+  if(w==="rec")note="預錄朗讀"+(recName()?"是微軟 Edge 語音「"+recName()+"」":"")+"事先合成好的經文錄音，存在網頁裡，不需要網路。語速以播放速度調整。";
+  else if(w==="claude")note=claudeOff?"這個頁面的 Claude 語音朗讀已關閉（可在頁面的權限選單重新開啟），或改選手機語音。":"Claude 語音較自然，需要連上網路。念中文時，四種聲線可能聽起來相近。";
+  else if(!hasNative)note="這個畫面沒有可用的語音。請在 Chrome 瀏覽器開啟這個網頁。";
+  else if(!dvoices.length)note="這台裝置沒有中文語音。請在系統設定搜尋「文字轉語音」，安裝中文（台灣）語音。";
+  else note="手機語音不需要網路。想換更自然的聲音，可在系統設定搜尋「文字轉語音」，更換 Google 語音的聲線或下載高品質語音。";
+  if(!claudeTts&&w!=="rec")note+="Claude 語音只在 claude.ai 網頁（Chrome 等瀏覽器）開啟時可用。";
+  $("voiceNote").textContent=note;
+  $("readNotes").checked=!!S.readNotes;
+}
+document.querySelectorAll("#engineSeg button").forEach(function(b){b.onclick=function(){
+  if(b.disabled)return;
+  stopAll();S.engine=b.dataset.engine;saveS();renderVoiceUI();
+};});
+document.querySelectorAll("#cvoiceSeg button").forEach(function(b){b.onclick=function(){
+  stopAll();S.cvoice=b.dataset.cvoice;saveS();renderVoiceUI();
+};});
+$("dvoiceSel").onchange=function(e){
+  stopAll();S.dvoice=e.target.value;saveS();
+  voice=dvoices.find(function(v){return v.voiceURI===S.dvoice;})||voice;
+};
+$("pitchRange").oninput=function(e){S.pitch=+e.target.value;$("pitchOut").textContent=S.pitch.toFixed(2);saveS();};
+$("pitchRange").onchange=function(){if(state==="playing"&&eng==="native"){if(mode==="note")playNotes(np,nsi);else play(cur);}};
+$("testVoice").onclick=function(){
+  stopAll();
+  var e=engineNow();if(!e){noSpeech();return;}
+  eng=e;
+  var c1=CH(1),txt=spoken(c1.clauses[1]+c1.clauses[2]);
+  if(e==="rec"&&recReady(1)){recInit(1);audio.onended=null;audio.src=recUrls[1][Math.min(1,recUrls[1].length-1)];audio.defaultPlaybackRate=audio.playbackRate=recRate();var pr=audio.play();if(pr&&pr.catch)pr.catch(function(){});}
+  else if(e==="native"){speechSynthesis.cancel();speechSynthesis.speak(utter(txt));}
+  else if(e==="claude")claudeTts.speak([{text:txt,id:"test"}],claudeOpts()).catch(function(err){
+    if(err&&err.code==="not_granted"){claudeOff=true;renderVoiceUI();}
+    else if(err&&err.code==="unavailable"){claudeTts=null;renderVoiceUI();}
+  });
+};
+
+if(hasNative){pickVoice();try{speechSynthesis.addEventListener("voiceschanged",pickVoice);}catch(e){speechSynthesis.onvoiceschanged=pickVoice;}}
+if(window.claude&&window.claude.use){
+  window.claude.use("tts").then(function(t){
+    if(!t)return;claudeTts=t;
+    t.onLine(function(o){
+      if(eng!=="claude"||!o||!o.id||o.id==="test"||state==="idle")return;
+      var id=String(o.id);
+      if(id.indexOf("n:")===0){var q=id.split(":");mode="note";np=+q[1];nsi=+q[2];if(!notesVisible())openNotes();markNote(np,nsi);}
+      else{var p=id.slice(2).split("-");mode="jing";cur=+p[0];mark(+p[0],+p[1]);}
+    });
+    t.onState(function(e){
+      if(eng!=="claude"||e.state!=="idle"||state==="idle")return;
+      if(e.reason==="viewer_stopped"||e.reason==="hidden"||e.reason==="interrupted"||e.reason==="time_limit"){token++;finish();}
+    });
+    renderVoiceUI();
+  }).catch(function(){});
+}
+
+/* ---------- 描寫 ---------- */
+// 筆畫存在 dd.s.<章>.<字序>；每章的筆畫在第一次用到時才讀進來
+var STK={};
+function strokesOf(n){
+  if(STK[n])return STK[n];
+  var a=[],len=CH(n).chars.length;
+  for(var k=0;k<len;k++){var v=load("dd.s."+n+"."+k,null);a.push(v&&v.length?v:null);}
+  return (STK[n]=a);
+}
+function doneIn(n){var a=strokesOf(n),c=0;for(var k=0;k<a.length;k++)if(a[k]&&a[k].length)c++;return c;}
+var TOTAL=0;for(var q=1;q<=NCH;q++)TOTAL+=CH(q).chars.length;
+function doneAll(){var c=0;for(var n=1;n<=NCH;n++)c+=doneIn(n);return c;}
+if(tpos.i>=CH(tpos.c).chars.length)tpos.i=0;
+var size=0,dpr=1;
+var gCtx=$("guide").getContext("2d"),iCtx=$("ink").getContext("2d");
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function curChar(){return CH(tpos.c).chars[tpos.i];}
+function updatePos(){
+  var len=CH(tpos.c).chars.length;
+  $("pos").innerHTML="";
+  var b=document.createElement("b");b.textContent=chapName(tpos.c)+"　第 "+(tpos.i+1)+" 字";
+  $("pos").append(b,"　本章已描 "+doneIn(tpos.c)+"／"+len);
+  $("prev").disabled=(tpos.c===1&&tpos.i===0);
+  var last=tpos.i===len-1;
+  $("next").textContent=last?(tpos.c===NCH?"完成":"下一章"):"下一字";
+  if(view==="trace")$("chapLabel").textContent=chapName(tpos.c);
+}
+function layoutCell(){
+  var st=$("stage");if(!st.clientWidth)return;
+  var s=Math.floor(Math.min(st.clientWidth-32,st.clientHeight-20,560));
+  if(s<120)s=120;
+  size=s;dpr=Math.min(3,window.devicePixelRatio||1);
+  var cell=$("cell");cell.style.width=s+"px";cell.style.height=s+"px";
+  [$("guide"),$("ink")].forEach(function(c){c.width=Math.round(s*dpr);c.height=Math.round(s*dpr);});
+  gCtx.setTransform(dpr,0,0,dpr,0,0);iCtx.setTransform(dpr,0,0,dpr,0,0);
+  redrawGuide();redrawInk();
+}
+function drawGrid(ctx,s,color,diag){
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.setLineDash([5,5]);
+  ctx.beginPath();ctx.moveTo(s/2,0);ctx.lineTo(s/2,s);ctx.moveTo(0,s/2);ctx.lineTo(s,s/2);
+  if(diag){ctx.moveTo(0,0);ctx.lineTo(s,s);ctx.moveTo(s,0);ctx.lineTo(0,s);}
+  ctx.stroke();ctx.restore();
+}
+function drawChar(ctx,ch,s,color,scale){
+  ctx.save();ctx.fillStyle=color;ctx.font=Math.round(s*(scale||0.8))+"px "+fontStack();
+  ctx.textAlign="center";ctx.textBaseline="alphabetic";
+  var m=ctx.measureText(ch);
+  var a=m.actualBoundingBoxAscent||s*0.6,d=m.actualBoundingBoxDescent||s*0.1;
+  ctx.fillText(ch,s/2,s/2+(a-d)/2);ctx.restore();
+}
+function redrawGuide(){
+  if(!size)return;
+  gCtx.clearRect(0,0,size,size);
+  drawGrid(gCtx,size,css("--grid"),true);
+  drawChar(gCtx,curChar(),size,css("--guide"),0.8);
+}
+// 筆畫：點為 {x,y,w}（CSS px）；儲存時正規化成 0–1000
+function mid(a,b){return {x:(a.x+b.x)/2,y:(a.y+b.y)/2};}
+function seg(ctx,p,i){
+  var a=i===1?p[0]:mid(p[i-2],p[i-1]),b=mid(p[i-1],p[i]);
+  ctx.lineWidth=(p[i-1].w+p[i].w)/2;
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(p[i-1].x,p[i-1].y,b.x,b.y);ctx.stroke();
+}
+function tail(ctx,p){
+  var n=p.length;if(n<2)return;
+  var a=mid(p[n-2],p[n-1]);
+  ctx.lineWidth=p[n-1].w;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(p[n-1].x,p[n-1].y);ctx.stroke();
+}
+function dot(ctx,pt){ctx.beginPath();ctx.arc(pt.x,pt.y,pt.w/2,0,Math.PI*2);ctx.fill();}
+function prep(ctx,color){ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineCap="round";ctx.lineJoin="round";}
+function decode(flat,s,ox,oy){var p=[];for(var j=0;j+2<flat.length;j+=3)p.push({x:ox+flat[j]/1000*s,y:oy+flat[j+1]/1000*s,w:flat[j+2]/10000*s});return p;}
+function paintStrokes(ctx,list,s,color,ox,oy){
+  if(!list)return;prep(ctx,color);
+  list.forEach(function(flat){
+    var p=decode(flat,s,ox||0,oy||0);
+    if(p.length===1){dot(ctx,p[0]);return;}
+    dot(ctx,p[0]);for(var i=1;i<p.length;i++)seg(ctx,p,i);tail(ctx,p);
+  });
+}
+function redrawInk(){if(!size)return;iCtx.clearRect(0,0,size,size);paintStrokes(iCtx,strokesOf(tpos.c)[tpos.i],size,css("--stroke"));}
+
+var live=null,activeId=null;
+function ptFrom(e){var r=$("ink").getBoundingClientRect();return {x:(e.clientX-r.left)*size/r.width,y:(e.clientY-r.top)*size/r.height,t:e.timeStamp,pr:e.pressure,type:e.pointerType};}
+function baseW(){return size*S.pen/100;}
+function addPoint(q){
+  var p=live,last=p[p.length-1];
+  var dx=q.x-last.x,dy=q.y-last.y,dist=Math.hypot(dx,dy);
+  if(dist<1.2)return;
+  var dt=Math.max(1,q.t-last.t),v=dist/dt,target;
+  if(q.type==="pen"&&q.pr>0&&q.pr!==0.5)target=baseW()*(0.3+q.pr*1.3);
+  else target=baseW()*Math.min(1.35,Math.max(0.42,1.35-v*0.38));
+  var w=last.w*0.72+target*0.28;
+  p.push({x:q.x,y:q.y,w:w,t:q.t});
+  prep(iCtx,css("--stroke"));seg(iCtx,p,p.length-1);
+}
+$("ink").addEventListener("pointerdown",function(e){
+  if(activeId!==null||(e.pointerType==="mouse"&&e.button!==0))return;
+  e.preventDefault();activeId=e.pointerId;
+  try{$("ink").setPointerCapture(e.pointerId);}catch(err){}
+  var q=ptFrom(e);
+  live=[{x:q.x,y:q.y,w:baseW()*0.95,t:q.t}];
+  prep(iCtx,css("--stroke"));dot(iCtx,live[0]);
+});
+$("ink").addEventListener("pointermove",function(e){
+  if(e.pointerId!==activeId||!live)return;
+  e.preventDefault();
+  var evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];if(!evs.length)evs=[e];
+  evs.forEach(function(ev){addPoint(ptFrom(ev));});
+});
+function endStroke(e){
+  if(e.pointerId!==activeId||!live)return;
+  activeId=null;
+  prep(iCtx,css("--stroke"));tail(iCtx,live);
+  var flat=[];live.forEach(function(p){flat.push(Math.round(p.x/size*1000),Math.round(p.y/size*1000),Math.round(p.w/size*10000));});
+  live=null;
+  var a=strokesOf(tpos.c);(a[tpos.i]=a[tpos.i]||[]).push(flat);
+  store("dd.s."+tpos.c+"."+tpos.i,a[tpos.i]);updatePos();
+  $("hint").textContent="";
+}
+$("ink").addEventListener("pointerup",endStroke);
+$("ink").addEventListener("pointercancel",endStroke);
+
+function goChar(c,i){
+  c=Math.min(NCH,Math.max(1,c));
+  var len=CH(c).chars.length;
+  tpos={c:c,i:Math.max(0,Math.min(len-1,i))};store("dd.idx",tpos);
+  document.fonts.load("40px "+fontStack(),curChar()).catch(function(){}).then(function(){redrawGuide();redrawInk();});
+  updatePos();
+  if(view==="trace"&&location.hash!=="#trace/"+c){try{history.replaceState(null,"","#trace/"+c);}catch(e){}}
+}
+$("prev").onclick=function(){
+  if(tpos.i>0)goChar(tpos.c,tpos.i-1);
+  else if(tpos.c>1)goChar(tpos.c-1,CH(tpos.c-1).chars.length-1);
+};
+$("next").onclick=function(){
+  var len=CH(tpos.c).chars.length;
+  if(tpos.i<len-1){goChar(tpos.c,tpos.i+1);return;}
+  var d=doneIn(tpos.c);
+  if(tpos.c===NCH){var a=doneAll();toast(a===TOTAL?"全書描寫圓滿":"已到最後一字，全書還有 "+(TOTAL-a)+" 字未描");openSheet();return;}
+  toast(d===len?chapName(tpos.c)+"描寫圓滿":chapName(tpos.c)+"還有 "+(len-d)+" 字未描");
+  goChar(tpos.c+1,0);
+};
+$("undo").onclick=function(){var s=strokesOf(tpos.c)[tpos.i];if(s&&s.length){s.pop();store("dd.s."+tpos.c+"."+tpos.i,s);redrawInk();updatePos();}};
+$("clear").onclick=function(){var a=strokesOf(tpos.c);if(a[tpos.i]&&a[tpos.i].length){a[tpos.i]=[];store("dd.s."+tpos.c+"."+tpos.i,[]);redrawInk();updatePos();}};
+$("penRange").oninput=function(e){S.pen=+e.target.value;$("penOut").textContent=S.pen;saveS();};
+var wipeArm=0;
+$("wipe").onclick=function(){
+  if(Date.now()-wipeArm>3000){wipeArm=Date.now();$("wipe").textContent="再按一次確認清除";setTimeout(function(){$("wipe").textContent="清除所有描寫";},3000);return;}
+  for(var n=1;n<=NCH;n++){var len=CH(n).chars.length;for(var k=0;k<len;k++)unstore("dd.s."+n+"."+k);}
+  STK={};wipeArm=0;$("wipe").textContent="清除所有描寫";redrawInk();updatePos();renderGrid(true);toast("已清除所有描寫");
+};
+
+/* ---------- 整篇（依章分組；每章一張 canvas，捲到附近才畫） ---------- */
+var gridBuilt=false,gridObs=null,GAP=4;
+function cellPx(){return window.innerWidth>=720?56:46;}
+function grpGeom(n,canvas){
+  var len=CH(n).chars.length,px=cellPx(),cw=px+GAP,wrap=$("gridWrap"),cols,rows;
+  if(S.layout==="h"){cols=Math.max(4,Math.floor((wrap.clientWidth-32+GAP)/cw));rows=Math.ceil(len/cols);}
+  else{rows=Math.max(4,Math.floor((wrap.clientHeight-24-60+GAP)/cw));cols=Math.ceil(len/rows);}
+  return {len:len,px:px,cw:cw,cols:cols,rows:rows,w:cols*cw-GAP,h:rows*cw-GAP};
+}
+// 第 k 字在格子中的位置：橫排由左而右、由上而下；直排由上而下、由右而左
+function cellXY(g,k){
+  if(S.layout==="h")return {x:(k%g.cols)*g.cw,y:Math.floor(k/g.cols)*g.cw};
+  return {x:(g.cols-1-Math.floor(k/g.rows))*g.cw,y:(k%g.rows)*g.cw};
+}
+function drawGroup(cv){
+  var n=+cv.dataset.n,g=grpGeom(n),r=Math.min(3,window.devicePixelRatio||1);
+  cv.style.width=g.w+"px";cv.style.height=g.h+"px";
+  cv.width=Math.round(g.w*r);cv.height=Math.round(g.h*r);
+  var ctx=cv.getContext("2d");ctx.setTransform(r,0,0,r,0,0);
+  var gc=css("--grid"),gu=css("--guide"),st=css("--stroke"),sf=css("--surface"),ac=css("--accent");
+  var c=CH(n),a=strokesOf(n);
+  for(var k=0;k<g.len;k++){
+    var p=cellXY(g,k);
+    ctx.fillStyle=sf;ctx.fillRect(p.x,p.y,g.px,g.px);
+    ctx.strokeStyle=gc;ctx.lineWidth=1;ctx.strokeRect(p.x+.5,p.y+.5,g.px-1,g.px-1);
+    ctx.save();ctx.translate(p.x,p.y);
+    var has=a[k]&&a[k].length;
+    drawChar(ctx,c.chars[k],g.px,has?"rgba(128,128,128,.12)":gu,0.78);
+    if(has)paintStrokes(ctx,a[k],g.px,st);
+    ctx.restore();
+    if(n===tpos.c&&k===tpos.i){ctx.strokeStyle=ac;ctx.lineWidth=2;ctx.strokeRect(p.x+1,p.y+1,g.px-2,g.px-2);}
+  }
+  cv.dataset.drawn="1";
+}
+function releaseGroup(cv){if(cv.dataset.drawn){cv.width=0;cv.height=0;cv.dataset.drawn="";}}
+function buildGrid(){
+  var wrap=$("gridWrap");wrap.innerHTML="";
+  if(gridObs)gridObs.disconnect();
+  gridObs=("IntersectionObserver" in window)?new IntersectionObserver(function(es){
+    es.forEach(function(en){if(en.isIntersecting)drawGroup(en.target);else releaseGroup(en.target);});
+  },{root:wrap,rootMargin:"800px"}):null;
+  for(var n=1;n<=NCH;n++){
+    var grp=document.createElement("div");grp.className="grp";grp.id="grp"+n;
+    var h=document.createElement("div");h.className="grp-h";
+    var b=document.createElement("b");b.textContent=chapName(n)+"　"+CH(n).d.title;
+    var cnt=document.createElement("span");cnt.className="gcnt";cnt.dataset.n=String(n);
+    h.append(b,cnt);
+    var ex=document.createElement("button");ex.className="btn exp";ex.textContent="存成圖片";ex.dataset.n=String(n);ex.hidden=!downloads;
+    h.appendChild(ex);
+    var cv=document.createElement("canvas");cv.dataset.n=String(n);
+    var g=grpGeom(n);cv.style.width=g.w+"px";cv.style.height=g.h+"px";
+    cv.setAttribute("role","img");cv.setAttribute("aria-label",chapName(n)+"描寫縮圖");
+    grp.append(h,cv);wrap.appendChild(grp);
+    if(gridObs)gridObs.observe(cv);else drawGroup(cv);
+  }
+  gridBuilt=true;
+}
+function renderGrid(rebuild){
+  if(!$("sheetView").classList.contains("on"))return;
+  if(rebuild||!gridBuilt)buildGrid();
+  else document.querySelectorAll("#gridWrap canvas").forEach(function(cv){if(cv.dataset.drawn)drawGroup(cv);});
+  document.querySelectorAll("#gridWrap .gcnt").forEach(function(s){var n=+s.dataset.n;s.textContent="已描 "+doneIn(n)+"／"+CH(n).chars.length;});
+  $("doneCount").textContent="全書已描 "+doneAll()+" ／ "+TOTAL;
+}
+$("gridWrap").addEventListener("click",function(e){
+  var ex=e.target.closest(".exp");if(ex){exportChapter(+ex.dataset.n);return;}
+  var cv=e.target.closest("canvas");if(!cv)return;
+  var n=+cv.dataset.n,g=grpGeom(n),r=cv.getBoundingClientRect();
+  var x=e.clientX-r.left,y=e.clientY-r.top,col=Math.floor(x/g.cw),row=Math.floor(y/g.cw),k;
+  if(S.layout==="h")k=row*g.cols+col;else k=(g.cols-1-col)*g.rows+row;
+  if(k<0||k>=g.len)return;
+  closeSheet();go("trace",n);goChar(n,k);
+});
+function openSheet(){
+  $("sheetView").classList.add("on");gridBuilt=false;renderGrid(true);
+  var el=$("grp"+tpos.c);if(el)el.scrollIntoView({block:"start",inline:"start"});
+}
+function closeSheet(){$("sheetView").classList.remove("on");if(gridObs)gridObs.disconnect();$("gridWrap").innerHTML="";gridBuilt=false;}
+$("openSheet").onclick=openSheet;$("closeSheet").onclick=closeSheet;
+
+/* ---------- 存成圖片（一章一張） ---------- */
+var downloads=null;
+if(window.claude&&window.claude.use){
+  window.claude.use("downloads").then(function(d){if(d){downloads=d;document.querySelectorAll("#gridWrap .exp").forEach(function(b){b.hidden=false;});}}).catch(function(){});
+}
+function exportChapter(n){
+  if(!downloads)return;
+  var c=CH(n),a=strokesOf(n);
+  document.fonts.load("40px "+fontStack(),c.chars.join("")+c.head+"民國年月日敬書0123456789").catch(function(){}).then(function(){
+    var rows=17,cell=96,m=90;
+    var bodyCols=Math.ceil(c.chars.length/rows);
+    var cols=1+bodyCols+1;
+    var W=cols*cell+m*2,H=rows*cell+m*2;
+    var cv=document.createElement("canvas");cv.width=W;cv.height=H;
+    var ctx=cv.getContext("2d");
+    ctx.fillStyle="#F3F1EA";ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle="rgba(176,58,46,.55)";ctx.lineWidth=2;ctx.strokeRect(m,m,cols*cell,rows*cell);
+    ctx.lineWidth=1;
+    for(var k=1;k<cols;k++){ctx.beginPath();ctx.moveTo(m+k*cell,m);ctx.lineTo(m+k*cell,m+rows*cell);ctx.stroke();}
+    function colX(col){return W-m-(col+1)*cell;}
+    // 第 1 欄：章名（不描寫，以墨色寫出，從第 2 格開始）
+    ctx.fillStyle="#24231F";ctx.font=Math.round(cell*0.5)+"px "+fontStack();ctx.textAlign="center";ctx.textBaseline="middle";
+    var hd=(chapName(n)+"　"+c.d.title).split("");
+    hd.forEach(function(ch,t){if(ch!=="　")ctx.fillText(ch,colX(0)+cell/2,m+(t+1)*cell*0.62+cell*0.5);});
+    for(var j=0;j<c.chars.length;j++){
+      var x=colX(1+Math.floor(j/rows)),y=m+(j%rows)*cell,inset=cell*0.06,s=cell-inset*2;
+      ctx.save();ctx.translate(x+inset,y+inset);
+      if(a[j]&&a[j].length)paintStrokes(ctx,a[j],s,"#1C1B18");
+      else drawChar(ctx,c.chars[j],s,"rgba(36,35,31,.13)",0.8);
+      ctx.restore();
+    }
+    var d=new Date(),date="民國"+(d.getFullYear()-1911)+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日　敬書";
+    ctx.fillStyle="#24231F";ctx.font=Math.round(cell*0.42)+"px "+fontStack();
+    var dc=date.split(""),startY=m+rows*cell-dc.length*cell*0.5-cell*0.4;
+    dc.forEach(function(ch,t){ctx.fillText(ch,colX(cols-1)+cell/2,startY+t*cell*0.5);});
+    cv.toBlob(function(blob){
+      if(!blob){toast("圖片產生失敗，請再試一次");return;}
+      downloads.save({filename:"道德經"+chapName(n)+"描寫.png",data:blob}).then(function(){toast("已存成圖片");}).catch(function(err){
+        if(err&&err.code==="declined")return;
+        if(err&&err.code==="rate_limited"){toast("請稍候再試");return;}
+        toast("這個畫面無法存檔");downloads=null;document.querySelectorAll("#gridWrap .exp").forEach(function(b){b.hidden=true;});
+      });
+    },"image/png");
+  });
+}
+
+/* ---------- 章節選單、自序 ---------- */
+function openMenu(){
+  var list=$("menuList");list.innerHTML="";
+  var active=view==="trace"?tpos.c:(view==="preface"?0:cn);
+  var pf=document.createElement("button");pf.className="mi"+(active===0?" cur":"");pf.dataset.n="0";
+  var s0=document.createElement("span");s0.className="no";s0.textContent="自序";
+  pf.append(s0,"黃元吉《道德經注釋》自序");list.appendChild(pf);
+  for(var n=1;n<=NCH;n++){
+    var b=document.createElement("button");b.className="mi"+(n===active?" cur":"");b.dataset.n=String(n);
+    var no=document.createElement("span");no.className="no";no.textContent=chapName(n);
+    b.append(no,CH(n).d.title);
+    var d=doneIn(n);
+    if(d){var pg=document.createElement("span");pg.className="pg";pg.textContent="已描 "+d+"／"+CH(n).chars.length;b.appendChild(pg);}
+    list.appendChild(b);
+  }
+  $("menuCount").textContent="全書已描 "+doneAll()+" ／ "+TOTAL;
+  $("menuView").classList.add("on");
+  var c=list.querySelector(".cur");if(c)c.scrollIntoView({block:"center"});
+}
+function closeMenu(){$("menuView").classList.remove("on");}
+$("openMenu").onclick=openMenu;$("closeMenu").onclick=closeMenu;
+$("menuList").addEventListener("click",function(e){
+  var b=e.target.closest(".mi");if(!b)return;
+  var n=+b.dataset.n;closeMenu();
+  if(n===0)go("preface");else go(view==="trace"?"trace":"read",n);
+});
+function buildPreface(){
+  var el=$("preface");el.innerHTML="";
+  var h=document.createElement("h2");h.textContent="自序";el.appendChild(h);
+  DATA.preface.forEach(function(t,i){
+    var p=document.createElement("p");p.textContent=t;
+    if(i===DATA.preface.length-1&&t.length<30)p.className="sign";
+    el.appendChild(p);
+  });
+}
+
+/* ---------- 設定面板 ---------- */
+function openSettings(){$("sheetBg").classList.add("on");$("settings").classList.add("on");}
+function closeSettings(){$("sheetBg").classList.remove("on");$("settings").classList.remove("on");}
+$("openSettings").onclick=openSettings;$("sheetBg").onclick=closeSettings;
+// Escape 只在關閉面板時攔下，其他時候留給平台用來停止 Claude 語音
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Escape")return;
+  var ids=["settings","sheetView","notesView","menuView"],open=ids.some(function(id){return $(id).classList.contains("on");});
+  if(open){e.preventDefault();closeSettings();closeSheet();closeMenu();$("notesView").classList.remove("on");}
+});
+
+/* ---------- 分頁與網址 ---------- */
+// #read/章、#trace/章、#preface；舊的 #read、#trace 沿用上次的章
+function parseHash(){
+  var h=location.hash.replace(/^#/,"").split("/"),v=h[0],n=parseInt(h[1],10);
+  if(v!=="trace"&&v!=="preface")v="read";
+  return {v:v,n:isNaN(n)?null:n};
+}
+function show(v,n){
+  view=v;
+  document.querySelectorAll(".tab").forEach(function(t){t.setAttribute("aria-selected",String(t.dataset.view===v));});
+  $("view-read").classList.toggle("on",v==="read");
+  $("view-trace").classList.toggle("on",v==="trace");
+  $("view-preface").classList.toggle("on",v==="preface");
+  if(v==="read"){gotoRead(n||cn);$("chapLabel").textContent=chapName(cn);}
+  else{
+    if(state==="playing")pause();
+    if(v==="trace"){
+      if(n&&n!==tpos.c)goChar(n,0);
+      $("chapLabel").textContent=chapName(tpos.c);updatePos();requestAnimationFrame(layoutCell);
+    }else $("chapLabel").textContent="自序";
+  }
+}
+function go(v,n){
+  if(v==="read")n=n||cn;else if(v==="trace")n=n||tpos.c;
+  var h="#"+v+(n?"/"+Math.min(NCH,Math.max(1,n)):"");
+  if(location.hash!==h)location.hash=h;else show(v,n);
+}
+document.querySelectorAll(".tab").forEach(function(t){t.onclick=function(){go(t.dataset.view);};});
+window.addEventListener("hashchange",function(){var p=parseHash();show(p.v,p.n);});
+
+/* ---------- 加到主畫面 ---------- */
+// 只在一般 https 網站（如 GitHub Pages）動態加上 manifest，讓 Chrome「加到主畫面」用「道」字圖示與名稱。
+// claude.ai Artifact 與直接開檔案時略過，維持零網路請求。
+(function(){
+  try{
+    if(location.protocol!=="https:"||/claude/.test(location.hostname))return;
+    var icon=$("appIcon").href,base=location.href.split("#")[0];
+    var m={name:"道德經",short_name:"道德經",start_url:base,scope:base.replace(/[^\/]*$/,""),
+      display:"standalone",background_color:"#ECEBE6",theme_color:"#16203A",
+      icons:[{src:icon,sizes:"512x512",type:"image/png",purpose:"any"},{src:icon,sizes:"512x512",type:"image/png",purpose:"maskable"}]};
+    var l=document.createElement("link");l.rel="manifest";
+    l.href="data:application/manifest+json;charset=utf-8,"+encodeURIComponent(JSON.stringify(m));
+    document.head.appendChild(l);
+  }catch(e){}
+})();
+
+/* ---------- 啟動 ---------- */
+buildPreface();applyFs();setUI();renderVoiceUI();
+$("penRange").value=S.pen;$("penOut").textContent=S.pen;
+if(typeof ResizeObserver!=="undefined")new ResizeObserver(function(){if($("view-trace").classList.contains("on"))layoutCell();}).observe($("stage"));
+var onTheme=function(){redrawGuide();redrawInk();renderGrid();};
+if(mq.addEventListener)mq.addEventListener("change",function(){if(S.theme==="auto")applyTheme();});
+$("themeBtn").onclick=function(){S.theme=isDark()?"light":"dark";saveS();applyTheme();};
+document.querySelectorAll("#themeSeg button").forEach(function(b){b.onclick=function(){S.theme=b.dataset.themeOpt;saveS();applyTheme();};});
+var p0=parseHash();
+if(p0.v==="read"&&p0.n)cn=Math.min(NCH,Math.max(1,p0.n));
+buildRead();applyLayout();applyTheme();
+show(p0.v,p0.n);
+idbGet("userFont").then(function(rec){
+  if(rec&&rec.buf)return installUserFont(rec.name,rec.buf).catch(function(){if(S.font==="user")S.font="wenkai";});
+  if(S.font==="user")S.font="wenkai";
+}).then(function(){applyFont();});
+})();
+</script>
+</body>
+</html>
