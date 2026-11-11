@@ -7,7 +7,7 @@
 
 預設字體檔：fonts/LXGWWenKaiTC-Regular.ttf（完整字體，約 13 MB）。
 找不到完整字體時改用 fonts/WenKai-subset.woff2，並列出缺字。
-字體只保留範本與 data/（經文、注釋、自序）用到的字元。
+字體只保留範本與 data/（經文、注釋、自序、已校對白話）用到的字元。
 """
 import base64, json, os, subprocess, sys, tempfile
 
@@ -33,8 +33,11 @@ data = textdata.load()
 payload = {"chapters": [{"n": c["n"], "title": c["title"], "text": c["text"], "inline": c["inline"],
                          "notes": c["notes"]} for c in data["chapters"]],
            "preface": data["preface"]}
+plain = textdata.load_plain(data["chapters"])  # 只放已校對（ok）的白話
+if plain:
+    payload["plain"] = {str(n): v for n, v in plain.items()}
 pjson = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-print(f"資料：81 章，已套用校勘 {data['corrections']} 條，{len(pjson.encode('utf-8')) // 1024} KB")
+print(f"資料：81 章，已套用校勘 {data['corrections']} 條，已校對白話 {sum(len(v) for v in plain.values())} 句，{len(pjson.encode('utf-8')) // 1024} KB")
 
 # ---- 字體 ----
 text_all = html + pjson

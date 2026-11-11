@@ -84,6 +84,11 @@ main{flex:1;min-height:0;position:relative}
 .pp{display:inline-grid;place-items:center;width:44px;height:44px;margin:-10px 2px -10px -6px;border:0;background:none;color:var(--accent);cursor:pointer;vertical-align:middle;border-radius:22px;font-size:14px}
 .scroll.v .pp{margin:-6px -10px 2px -10px}
 .pp svg{width:16px;height:16px}
+/* 白話：逐句對照時接在每句經文後；章末時另成一段（橫排展開、直排開面板） */
+.pl{display:block;font-family:var(--sutra-font);font-size:var(--nfs);line-height:1.9;letter-spacing:.04em;color:var(--ink-soft);margin-block:.25em .95em;transition:color .25s}
+.pl.on{color:var(--accent)}
+.notes .pl{margin-block:0 1em}
+.pl-src{display:block;font-size:13px;line-height:1.7;letter-spacing:.04em;color:var(--ink-soft);margin-block:.6em 0}
 .prose{font-family:var(--sutra-font);font-size:var(--nfs);line-height:2.1;letter-spacing:.08em}
 .prose h2{font-size:1.3em;font-weight:400;letter-spacing:.25em;margin:0 0 1em}
 .scroll.v .prose h2{margin:0 0 0 1em}
@@ -176,11 +181,13 @@ main{flex:1;min-height:0;position:relative}
       <div class="scroll v" id="scroll">
         <div class="sutra" id="sutra"></div>
         <div class="after" id="after">
+          <button class="notes-toggle" id="plainToggle" aria-expanded="false" hidden>白話</button>
           <button class="notes-toggle" id="notesToggle" aria-expanded="false">黃元吉注釋</button>
           <div class="chap-nav">
             <button class="btn" id="prevChap">上一章</button>
             <button class="btn" id="nextChap">下一章</button>
           </div>
+          <div class="notes-inline" id="plainInline" hidden></div>
           <div class="notes-inline" id="notesInline" hidden></div>
         </div>
       </div>
@@ -248,6 +255,16 @@ main{flex:1;min-height:0;position:relative}
   </div>
 </div>
 
+<div class="overlay" id="plainView" aria-label="白話">
+  <header>
+    <button class="icon-btn" id="closePlain" aria-label="返回">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2 id="plainTitle">白話</h2>
+  </header>
+  <div class="scroll v" id="plainScroll"></div>
+</div>
+
 <div class="overlay" id="menuView" aria-label="章節">
   <header>
     <button class="icon-btn" id="closeMenu" aria-label="返回">
@@ -287,6 +304,13 @@ main{flex:1;min-height:0;position:relative}
   <h3>朗讀注釋</h3>
   <label class="opt"><input type="checkbox" id="readNotes"> 念完經文接著念黃元吉注釋</label>
   <p class="note">注釋很長，隨時可按停止。也可以打開注釋，點段落前的 ▶ 從那一段開始念。注釋沒有預錄，會用 Claude 語音或手機語音朗讀。</p>
+  <h3>白話</h3>
+  <div class="seg" id="plainSeg">
+    <button data-plain="off" aria-pressed="true">不顯示</button>
+    <button data-plain="end" aria-pressed="false">章末</button>
+    <button data-plain="line" aria-pressed="false">逐句對照</button>
+  </div>
+  <p class="note">白話由 Claude 依黃元吉注意譯，未經專家審訂，僅供參考。「逐句對照」把白話接在每句經文後面；「章末」在經文後放一個「白話」按鈕。字級跟注釋相同。</p>
   <h3>經文字級</h3>
   <div class="row"><input type="range" id="fsRange" min="16" max="60" step="1" aria-label="經文字級"><output id="fsOut"></output></div>
   <h3>注釋字級</h3>
@@ -357,7 +381,7 @@ function unstore(k){try{localStorage.removeItem(k);}catch(e){}}
 var toastT;
 function toast(msg,ms){var t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("on");},ms||2600);}
 
-var S=Object.assign({fs:26,nfs:18,layout:"v",font:"wenkai",pen:4,rate:0.8,theme:"auto",engine:"auto",cvoice:"buttery",dvoice:"",pitch:1,readNotes:false},load("dd.set",{}));
+var S=Object.assign({fs:26,nfs:18,layout:"v",font:"wenkai",pen:4,rate:0.8,theme:"auto",engine:"auto",cvoice:"buttery",dvoice:"",pitch:1,readNotes:false,plain:"off"},load("dd.set",{}));
 function saveS(){store("dd.set",S);}
 
 /* ---------- 章節資料 ---------- */
@@ -453,6 +477,8 @@ function buildRead(){
   var t=document.createElement("span");t.className="cl";t.dataset.i="0";t.textContent=c.head;h.appendChild(t);
   var b=document.createElement("p");b.className="body";
   var off=0,inl=c.d.inline||[];
+  var ps=plainSents(cn),byEnd={};
+  if(S.plain==="line")ps.forEach(function(x){byEnd[x.b]=x;});
   for(var i=1;i<c.clauses.length;i++){
     var s=document.createElement("span");s.className="cl";s.dataset.i=String(i);
     var txt=c.clauses[i],from=0;
@@ -465,8 +491,20 @@ function buildRead(){
     });
     s.append(txt.slice(from));
     off+=txt.length;b.appendChild(s);
+    if(byEnd[i])b.appendChild(plSpan(byEnd[i],"span"));
   }
   el.append(h,b);
+  if(S.plain==="line"&&ps.length){var src=document.createElement("p");src.className="pl-src";src.textContent=PLAIN_SRC;el.appendChild(src);}
+  // 白話（章末）
+  plainEl=null;
+  if(S.plain==="end"&&ps.length){
+    plainEl=document.createElement("div");plainEl.className="notes";
+    ps.forEach(function(x){plainEl.appendChild(plSpan(x,"p"));});
+    var src2=document.createElement("p");src2.className="pl-src";src2.textContent=PLAIN_SRC;plainEl.appendChild(src2);
+  }
+  $("plainTitle").textContent="白話　"+chapName(cn);
+  $("plainInline").innerHTML="";$("plainScroll").innerHTML="";
+  $("plainToggle").hidden=!plainEl;
   // 注釋
   notesEl=document.createElement("div");notesEl.className="notes";
   if(inl.length){
@@ -488,8 +526,45 @@ function buildRead(){
   $("notesTitle").textContent="黃元吉注釋　"+chapName(cn);
   $("chapLabel").textContent=chapName(cn);
   $("prevChap").disabled=cn<=1;$("nextChap").disabled=cn>=NCH;
-  placeNotes();
+  placeNotes();placePlain();
 }
+/* ---------- 白話（data/plain.json，Claude 依黃元吉注意譯；build.py 只放已校對的句子）---------- */
+var PLAIN_SRC="白話：Claude 依黃元吉注意譯，未經專家審訂，僅供參考";
+var plainEl=null,plainOpen=false;
+function plainSents(n){ // 依整句（到「。：！？」）切分，回傳有白話的句子 [{a,b,text}]
+  var P=DATA.plain&&DATA.plain[String(n)];if(!P)return [];
+  var cl=CH(n).clauses,out=[],i=1;
+  while(i<cl.length){
+    var j=i;while(j<cl.length-1&&!/[。：！？]」?$/.test(cl[j]))j++;
+    if(P[i+"-"+j])out.push({a:i,b:j,text:P[i+"-"+j]});
+    i=j+1;
+  }
+  return out;
+}
+function plSpan(x,tag){var e=document.createElement(tag);e.className="pl";e.dataset.a=String(x.a);e.dataset.b=String(x.b);e.textContent=x.text;return e;}
+function placePlain(){
+  var tg=$("plainToggle");
+  if(!plainEl){$("plainView").classList.remove("on");return;}
+  if(S.layout==="h"){
+    $("plainView").classList.remove("on");
+    $("plainInline").appendChild(plainEl);$("plainInline").hidden=!plainOpen;
+    tg.setAttribute("aria-expanded",String(plainOpen));tg.textContent=plainOpen?"收合白話":"白話";
+  }else{
+    $("plainInline").hidden=true;$("plainScroll").appendChild(plainEl);
+    tg.setAttribute("aria-expanded","false");tg.textContent="白話";
+  }
+}
+$("plainToggle").onclick=function(){
+  if(S.layout==="h"){plainOpen=!plainOpen;placePlain();if(plainOpen)$("plainToggle").scrollIntoView({block:"start",behavior:"smooth"});}
+  else $("plainView").classList.add("on");
+};
+$("closePlain").onclick=function(){$("plainView").classList.remove("on");};
+function applyPlainUI(){document.querySelectorAll("#plainSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plain===S.plain));});}
+document.querySelectorAll("#plainSeg button").forEach(function(b){b.onclick=function(){
+  if(S.plain===b.dataset.plain)return;
+  S.plain=b.dataset.plain;saveS();applyPlainUI();plainOpen=false;buildRead();
+  if(state!=="idle"&&mode==="jing")mark(cur,sentenceEnd(cur));
+};});
 // 橫排：注釋在經文下方展開；直排：注釋另開面板
 function placeNotes(){
   if(!notesEl)return;
@@ -514,10 +589,10 @@ $("notesToggle").onclick=function(){
 };
 $("closeNotes").onclick=function(){$("notesView").classList.remove("on");};
 function applyLayout(){
-  [$("scroll"),$("prefScroll"),$("notesScroll")].forEach(function(sc){sc.className="scroll "+S.layout;sc.scrollLeft=0;sc.scrollTop=0;});
+  [$("scroll"),$("prefScroll"),$("notesScroll"),$("plainScroll")].forEach(function(sc){sc.className="scroll "+S.layout;sc.scrollLeft=0;sc.scrollTop=0;});
   $("gridWrap").className="grid-wrap "+S.layout;
   document.querySelectorAll("#layoutSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.layout===S.layout));});
-  placeNotes();
+  placeNotes();placePlain();
 }
 function applyFs(){
   document.documentElement.style.setProperty("--fs",S.fs+"px");
@@ -533,7 +608,7 @@ document.querySelectorAll("#layoutSeg button").forEach(function(b){b.onclick=fun
 $("readNotes").onchange=function(e){S.readNotes=e.target.checked;saveS();};
 function gotoRead(n){
   n=Math.min(NCH,Math.max(1,n));
-  if(n!==cn||!notesEl){stopAll();cn=n;store("dd.ch",cn);notesOpen=false;buildRead();}
+  if(n!==cn||!notesEl){stopAll();cn=n;store("dd.ch",cn);notesOpen=false;plainOpen=false;buildRead();}
   var sc=$("scroll");sc.scrollLeft=0;sc.scrollTop=0;
 }
 $("prevChap").onclick=function(){go("read",cn-1);};
@@ -625,13 +700,15 @@ function noteEngine(){
   if(claudeTts)return claudeOff?null:"claude";
   return hasNative?"native":null;
 }
-function clearMarks(){document.querySelectorAll(".cl.on,.ns.on").forEach(function(e){e.classList.remove("on");});}
+function clearMarks(){document.querySelectorAll(".cl.on,.ns.on,.pl.on").forEach(function(e){e.classList.remove("on");});}
 function mark(a,b){
   clearMarks();
   if(a<0)return;
   if(b==null)b=a;
   var first=null;
   for(var i=a;i<=b;i++){var el=document.querySelector('.cl[data-i="'+i+'"]');if(el){el.classList.add("on");if(!first)first=el;}}
+  var pls=[].slice.call(document.querySelectorAll("#sutra .pl"));if(plainEl)pls=pls.concat([].slice.call(plainEl.querySelectorAll(".pl")));
+  pls.forEach(function(p){if(+p.dataset.a<=a&&a<=+p.dataset.b)p.classList.add("on");});
   if(first)first.scrollIntoView({block:"center",inline:"center",behavior:"smooth"});
 }
 function markNote(p,s){
@@ -1202,7 +1279,7 @@ $("openSettings").onclick=openSettings;$("sheetBg").onclick=closeSettings;
 document.addEventListener("keydown",function(e){
   if(e.key!=="Escape")return;
   var ids=["settings","sheetView","notesView","menuView"],open=ids.some(function(id){return $(id).classList.contains("on");});
-  if(open){e.preventDefault();closeSettings();closeSheet();closeMenu();$("notesView").classList.remove("on");}
+  if(open){e.preventDefault();closeSettings();closeSheet();closeMenu();$("notesView").classList.remove("on");$("plainView").classList.remove("on");}
 });
 
 /* ---------- 分頁與網址 ---------- */
@@ -1252,7 +1329,8 @@ window.addEventListener("hashchange",function(){var p=parseHash();show(p.v,p.n);
 })();
 
 /* ---------- 啟動 ---------- */
-buildPreface();applyFs();setUI();renderVoiceUI();
+if(["off","end","line"].indexOf(S.plain)<0)S.plain="off";
+buildPreface();applyFs();setUI();renderVoiceUI();applyPlainUI();
 $("penRange").value=S.pen;$("penOut").textContent=S.pen;
 if(typeof ResizeObserver!=="undefined")new ResizeObserver(function(){if($("view-trace").classList.contains("on"))layoutCell();}).observe($("stage"));
 var onTheme=function(){redrawGuide();redrawInk();renderGrid();};

@@ -1,0 +1,244 @@
+<title>道德經白話審閱</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* 版面：單欄審閱表。黏頂進度列＋章節籤；每章一組，經文（文楷、大字）在上、白話在下，逐句卡片；配色沿用網頁的宣紙／磁青 */
+:root{
+  --paper:#ECEAE3;--sheet:#F8F7F2;--ink:#23221E;--soft:#66645C;--rule:#D6D2C6;
+  --accent:#2C4775;--on-accent:#F8F7F2;
+  --ok:#2E6A45;--ok-bg:rgba(46,106,69,.11);--warn:#8A5A12;--warn-bg:rgba(176,122,24,.13);
+  --hl:rgba(44,71,117,.08);
+  --f-text:"LXGW WenKai TC","Kaiti TC","BiauKai",serif;
+  --f-ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#131B30;--sheet:#1B2541;--ink:#E9E2CC;--soft:#A29D88;--rule:#2E3B62;
+  --accent:#D3B169;--on-accent:#131B30;
+  --ok:#8CC79E;--ok-bg:rgba(140,199,158,.13);--warn:#E0B661;--warn-bg:rgba(224,182,97,.14);
+  --hl:rgba(211,177,105,.10);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#131B30;--sheet:#1B2541;--ink:#E9E2CC;--soft:#A29D88;--rule:#2E3B62;
+  --accent:#D3B169;--on-accent:#131B30;
+  --ok:#8CC79E;--ok-bg:rgba(140,199,158,.13);--warn:#E0B661;--warn-bg:rgba(224,182,97,.14);
+  --hl:rgba(211,177,105,.10);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:44rem;margin:0 auto}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:12px 10px;border-bottom:1px solid var(--rule);display:grid;gap:8px}
+.top-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-text);font-weight:700;font-size:1.4rem;letter-spacing:.12em;margin:0;text-wrap:balance}
+.prog{margin-left:auto;font-size:.86rem;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.prog b{color:var(--ink);font-weight:700}
+.bar{height:4px;border-radius:2px;background:var(--rule);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.save{font-size:.78rem;color:var(--soft)}
+.save.err{color:var(--warn)}
+nav.toc{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+nav.toc a{flex:none;font-size:.82rem;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:999px;padding:5px 11px;background:var(--sheet);white-space:nowrap;font-variant-numeric:tabular-nums}
+nav.toc a .n{color:var(--soft);margin-left:4px}
+nav.toc a.done{border-color:var(--ok);color:var(--ok)}
+
+.intro{margin:20px 0 4px;color:var(--soft);font-size:.92rem;display:grid;gap:6px}
+.intro p{margin:0}
+.intro b{color:var(--ink);font-weight:500}
+section.ch{margin-top:36px;scroll-margin-top:170px;display:grid;gap:10px}
+.ch-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2{font-family:var(--f-text);font-size:1.3rem;letter-spacing:.1em;margin:0;font-weight:700}
+.ch-head small{font-size:.8rem;color:var(--soft);font-variant-numeric:tabular-nums}
+.bulk{margin-left:auto;border:1px dashed var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:0 14px;font-size:.84rem;cursor:pointer;min-height:40px}
+
+details.notes{background:var(--sheet);border:1px solid var(--rule);border-radius:10px}
+details.notes summary{cursor:pointer;padding:10px 14px;min-height:44px;display:flex;align-items:center;font-size:.9rem;color:var(--soft)}
+.notes-body{padding:0 14px 14px;display:grid;gap:10px;font-family:var(--f-text);font-size:1rem;line-height:1.9;max-height:60vh;overflow-y:auto}
+.notes-body p{margin:0}
+
+.item{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
+.item.ok{border-left:4px solid var(--ok)}
+.item.edit{border-left:4px solid var(--warn)}
+.item.done{opacity:.75}
+.jing{font-family:var(--f-text);font-size:1.25rem;line-height:1.8;letter-spacing:.04em;margin:0;overflow-wrap:anywhere}
+.plain{font-size:1rem;line-height:1.85;margin:0;padding:10px 12px;background:var(--hl);border-radius:8px;overflow-wrap:anywhere}
+.q{font-size:.86rem;color:var(--warn);background:var(--warn-bg);border-radius:8px;padding:8px 10px;margin:0}
+.q b{font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{min-height:44px;min-width:84px;padding:0 16px;border:1px solid var(--rule);background:transparent;border-radius:8px;cursor:pointer;font-size:.92rem}
+.seg button[aria-pressed="true"][data-v="ok"]{background:var(--ok);border-color:var(--ok);color:var(--sheet)}
+.seg button[aria-pressed="true"][data-v="edit"]{background:var(--warn);border-color:var(--warn);color:var(--sheet)}
+.tag{font-size:.8rem;color:var(--ok)}
+.note-in{width:100%;min-height:72px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);padding:8px 10px;font-size:.95rem;line-height:1.6;resize:vertical}
+
+h2.other{margin-top:40px}
+textarea#gnote{width:100%;min-height:110px;border:1px solid var(--rule);border-radius:10px;background:var(--sheet);padding:10px 12px;font-size:.95rem;margin-top:8px}
+.foot{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:500}
+#copyOut{width:100%;min-height:160px;font-size:.8rem;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);padding:8px;margin-top:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <h1>道德經白話審閱</h1>
+      <span class="prog">已決定 <b id="pDone">0</b> ／ <span id="pAll">0</span></span>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="pBar"></i></div>
+    <div class="save" id="saveState" role="status">正在連線…</div>
+    <nav class="toc" id="toc" aria-label="章"></nav>
+  </header>
+
+  <div class="intro">
+    <p>白話依<b>黃元吉注</b>意譯，只譯經文。每一句選「通過」或「要改」，會自動存起來，Claude 直接讀取。</p>
+    <p>選「要改」時，可以寫哪裡不對，也可以直接寫你要的譯文。黃色框是我起草時沒把握的地方。各章的黃元吉注可以展開對照。</p>
+  </div>
+
+  <div id="list"></div>
+
+  <h2 class="other" id="other">其他意見</h2>
+  <textarea id="gnote" placeholder="例如：整體再口語一點；括號說明太多；丹道用語想保留原文不解釋……"></textarea>
+  <div class="foot">
+    <button class="btn" type="button" id="copyBtn">複製我的決定（文字）</button>
+    <span class="save" id="copyMsg"></span>
+  </div>
+  <textarea id="copyOut" readonly hidden aria-label="決定的文字版"></textarea>
+</div>
+
+<script>
+(function(){
+"use strict";
+const D=/*__DATA__*/null;
+const CN="〇一二三四五六七八九";
+const cn=n=>n<10?CN[n]:(Math.floor(n/10)===1?"":CN[Math.floor(n/10)])+"十"+(n%10?CN[n%10]:"");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const key=(n,id)=>n+":"+id;
+// 狀態：{s:{"章:id":{v:"ok"|"edit",note}}, note}
+let S={s:{},note:""};
+const LS="dd-plain-review";
+try{const x=JSON.parse(localStorage.getItem(LS)||"null");if(x&&typeof x==="object")S={s:x.s||{},note:x.note||""};}catch(e){}
+
+const pending=c=>c.s.filter(s=>!s.ok);
+function card(c,s){
+  const k=key(c.n,s.id),o=S.s[k]||{};
+  if(s.ok)return `<article class="item done" id="it-${k}">
+    <p class="jing">${esc(s.jing)}</p><p class="plain">${esc(s.text)}</p><span class="tag">已定稿</span></article>`;
+  return `<article class="item ${o.v||""}" id="it-${k}">
+    <p class="jing">${esc(s.jing)}</p>
+    <p class="plain">${esc(s.text)}</p>
+    ${s.q?`<p class="q"><b>起草疑點：</b>${esc(s.q)}</p>`:""}
+    <div class="seg" role="group" aria-label="決定">
+      <button type="button" data-k="${k}" data-v="ok" aria-pressed="${o.v==="ok"}">通過</button>
+      <button type="button" data-k="${k}" data-v="edit" aria-pressed="${o.v==="edit"}">要改</button>
+    </div>
+    <textarea class="note-in" id="n-${k}" data-k="${k}" placeholder="哪裡不對，或直接寫你要的譯文"${o.v==="edit"?"":" hidden"}>${esc(o.note||"")}</textarea>
+  </article>`;
+}
+function render(){
+  $("list").innerHTML=D.chapters.map(c=>`<section class="ch" id="ch${c.n}">
+    <div class="ch-head"><h2>第${cn(c.n)}章　${esc(c.title)}</h2><small id="cp${c.n}"></small>
+      ${pending(c).length?`<button class="bulk" type="button" data-bulk="${c.n}">未決定的全部通過</button>`:""}</div>
+    <details class="notes"><summary>黃元吉注（${c.notes.length} 段）</summary><div class="notes-body">${c.notes.map(p=>`<p>${esc(p)}</p>`).join("")}</div></details>
+    ${c.s.map(s=>card(c,s)).join("")}
+  </section>`).join("");
+  $("gnote").value=S.note||"";
+  progress();
+}
+function progress(){
+  let done=0,all=0;
+  const toc=D.chapters.map(c=>{
+    const p=pending(c),d=p.filter(s=>(S.s[key(c.n,s.id)]||{}).v).length;
+    done+=d;all+=p.length;
+    const el=$("cp"+c.n);if(el)el.textContent=p.length?`已決定 ${d}／${p.length}`:"全章已定稿";
+    return `<a href="#ch${c.n}" class="${d===p.length?"done":""}">第${cn(c.n)}章<span class="n">${d}/${p.length}</span></a>`;
+  });
+  $("toc").innerHTML=toc.join("")+'<a href="#other">其他意見</a>';
+  $("pDone").textContent=done;$("pAll").textContent=all;$("pBar").style.width=(all?done/all*100:0)+"%";
+}
+function setCard(k){
+  const o=S.s[k]||{},el=$("it-"+k);if(!el)return;
+  el.className="item "+(o.v||"");
+  el.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===o.v)));
+  const ni=$("n-"+k);ni.hidden=o.v!=="edit";if(!ni.hidden&&!ni.value)ni.focus();
+}
+
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".seg button");
+  if(b){
+    const k=b.dataset.k,o=S.s[k]||{};
+    if(o.v===b.dataset.v)delete o.v;else o.v=b.dataset.v;
+    S.s[k]=o;setCard(k);progress();changed();return;
+  }
+  const g=e.target.closest("[data-bulk]");
+  if(g){
+    const c=D.chapters.find(x=>String(x.n)===g.dataset.bulk);
+    pending(c).forEach(s=>{const k=key(c.n,s.id),o=S.s[k]||{};if(!o.v){o.v="ok";S.s[k]=o;setCard(k);}});
+    progress();changed();
+  }
+});
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.classList.contains("note-in")){const o=S.s[t.dataset.k]||{};o.note=t.value;S.s[t.dataset.k]=o;changed(1200);}
+  else if(t.id==="gnote"){S.note=t.value;changed(1200);}
+});
+
+$("copyBtn").addEventListener("click",()=>{
+  const L=[];
+  D.chapters.forEach(c=>{
+    L.push(`【第${c.n}章】`);
+    pending(c).forEach(s=>{const o=S.s[key(c.n,s.id)]||{};
+      L.push(`${s.id} ${o.v==="ok"?"通過":o.v==="edit"?"要改":"未決定"}${o.note?"："+o.note:""}`);});
+  });
+  if(S.note)L.push("\n【其他意見】\n"+S.note);
+  const txt=L.join("\n"),out=$("copyOut");out.value=txt;out.hidden=false;
+  const ok=()=>{$("copyMsg").textContent="已複製";};
+  const fb=()=>{out.focus();out.select();$("copyMsg").textContent="已選取文字，請長按複製";};
+  try{navigator.clipboard.writeText(txt).then(ok,fb);}catch(err){fb();}
+});
+
+/* 儲存：db（Claude 讀得到）＋本機備份 */
+let ref=null,timer=null,inFlight=false,dirty=false,remoteLoaded=false,touched=false;
+const LOCAL="只存在這台裝置的瀏覽器，Claude 讀不到。可用最下方「複製我的決定」傳給 Claude。";
+function setSave(t,err){const s=$("saveState");s.textContent=t;s.classList.toggle("err",!!err);}
+function changed(ms){
+  touched=true;
+  try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
+  if(!ref){setSave(LOCAL,true);return;}
+  dirty=true;setSave("儲存中…");
+  clearTimeout(timer);timer=setTimeout(flush,ms||600);
+}
+async function flush(){
+  if(inFlight||!dirty)return;
+  inFlight=true;dirty=false;
+  try{await ref.set({s:S.s,note:S.note,updated:new Date().toISOString()});setSave("已儲存，Claude 可以讀取");}
+  catch(e){dirty=true;setSave("暫時無法儲存，稍後會再試；也可用最下方「複製我的決定」。",true);}
+  inFlight=false;
+  if(dirty){clearTimeout(timer);timer=setTimeout(flush,1500);}
+}
+render();
+const giveUp=setTimeout(()=>{if(!remoteLoaded)setSave("連不上雲端儲存，決定先存在這台裝置；可用最下方「複製我的決定」。",true);},10000);
+(window.claude&&window.claude.use?window.claude.use("db"):Promise.resolve(null)).then(db=>{
+  if(!db){clearTimeout(giveUp);setSave(LOCAL);return;}
+  ref=db.doc("plain/review");
+  ref.onSnapshot(snap=>{
+    if(snap.metadata.fromCache)return;
+    clearTimeout(giveUp);
+    const first=!remoteLoaded;remoteLoaded=true;
+    if(snap.exists&&!snap.metadata.hasPendingWrites&&!touched){
+      const r=snap.data();S={s:Object.assign({},r.s||{}),note:r.note||""};
+      try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
+      render();
+    }
+    if(first){
+      if(!snap.exists&&(Object.keys(S.s).length||S.note)){dirty=true;flush();}
+      else setSave(snap.exists?"已載入先前的決定":"還沒有任何決定，點一下就會自動儲存");
+    }
+  },()=>{clearTimeout(giveUp);setSave("無法連線儲存，決定先存在這台裝置。",true);});
+}).catch(()=>{clearTimeout(giveUp);setSave(LOCAL);});
+})();
+</script>

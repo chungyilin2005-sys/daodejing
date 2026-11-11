@@ -88,3 +88,40 @@ def cn_num(n):
         return d[n]
     t, u = divmod(n, 10)
     return ("" if t == 1 else d[t]) + "十" + (d[u] if u else "")
+
+
+def load_plain(chapters, only_ok=True):
+    """讀 data/plain.json（經文白話，Claude 起草、使用者審定），並檢查與目前經文一致。
+
+    格式：{"meta": {...}, "chapters": {"1": [{"id": "1-4", "jing": "道可道，…", "text": "…", "q": "疑點", "ok": false}]}}
+    id 與預錄相同（整句的子句起迄）；jing 是起草時的經文，與目前經文（已套用校勘）不符就停止。
+    回傳 {章: {id: text}}；only_ok 時只取 ok 為 true 的句子。
+    """
+    path = os.path.join(DATA, "plain.json")
+    if not os.path.exists(path):
+        return {}
+    doc = json.load(open(path, encoding="utf-8"))
+    by_n = {c["n"]: c for c in chapters}
+    out = {}
+    for n, items in doc.get("chapters", {}).items():
+        c = by_n.get(int(n))
+        if not c:
+            sys.exit(f"plain.json：沒有第 {n} 章")
+        cl = clauses(c["n"], c["title"], c["text"])
+        want = {f"{i}-{j}": "".join(cl[i:j + 1]) for i, j in sentences(cl)[1:]}
+        seen = set()
+        for it in items:
+            sid = it["id"]
+            if sid not in want:
+                sys.exit(f"plain.json：第 {n} 章沒有句子 {sid}（經文斷句可能改變了）")
+            if it["jing"] != want[sid]:
+                sys.exit(f"plain.json：第 {n} 章 {sid} 經文不符\n  白話依據：{it['jing']}\n  目前經文：{want[sid]}\n請使用者重審這一句")
+            if sid in seen:
+                sys.exit(f"plain.json：第 {n} 章 {sid} 重複")
+            seen.add(sid)
+            if it.get("ok") or not only_ok:
+                if it.get("text", "").strip():
+                    out.setdefault(int(n), {})[sid] = it["text"].strip()
+        if seen and seen != set(want):
+            print(f"注意：plain.json 第 {n} 章缺 {len(set(want) - seen)} 句白話")
+    return out
