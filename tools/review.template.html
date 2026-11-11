@@ -1,0 +1,376 @@
+<title>道德經待確認事項</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* 版面：單欄工作表。黏在頂端的進度列 + 分節卡片清單；字體取自網頁本身（文楷寫經文、黑體寫說明） */
+:root{
+  --paper:#ECEAE3;--sheet:#F8F7F2;--ink:#23221E;--soft:#66645C;--rule:#D6D2C6;
+  --accent:#2C4775;--on-accent:#F8F7F2;--zhu:#A8382C;--zhu-bg:rgba(168,56,44,.09);
+  --ok:#2E6A45;--ok-bg:rgba(46,106,69,.11);--warn:#8A5A12;--warn-bg:rgba(176,122,24,.13);
+  --hl:rgba(44,71,117,.11);
+  --f-text:"LXGW WenKai TC","Kaiti TC","BiauKai",serif;
+  --f-ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#131B30;--sheet:#1B2541;--ink:#E9E2CC;--soft:#A29D88;--rule:#2E3B62;
+  --accent:#D3B169;--on-accent:#131B30;--zhu:#D8735E;--zhu-bg:rgba(216,115,94,.13);
+  --ok:#8CC79E;--ok-bg:rgba(140,199,158,.13);--warn:#E0B661;--warn-bg:rgba(224,182,97,.14);
+  --hl:rgba(211,177,105,.14);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#131B30;--sheet:#1B2541;--ink:#E9E2CC;--soft:#A29D88;--rule:#2E3B62;
+  --accent:#D3B169;--on-accent:#131B30;--zhu:#D8735E;--zhu-bg:rgba(216,115,94,.13);
+  --ok:#8CC79E;--ok-bg:rgba(140,199,158,.13);--warn:#E0B661;--warn-bg:rgba(224,182,97,.14);
+  --hl:rgba(211,177,105,.14);color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:46rem;margin:0 auto}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);padding-block:12px 10px;border-bottom:1px solid var(--rule);display:grid;gap:8px}
+.top-row{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-text);font-weight:700;font-size:1.45rem;letter-spacing:.12em;margin:0;text-wrap:balance}
+.prog{margin-left:auto;font-size:.86rem;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.prog b{color:var(--ink);font-weight:700}
+.bar{height:4px;border-radius:2px;background:var(--rule);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.save{font-size:.78rem;color:var(--soft)}
+.save.err{color:var(--zhu)}
+nav.toc{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+nav.toc a{flex:none;font-size:.82rem;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:999px;padding:5px 11px;background:var(--sheet);white-space:nowrap}
+nav.toc a .n{color:var(--soft);font-variant-numeric:tabular-nums;margin-left:4px}
+nav.toc a.done{border-color:var(--ok);color:var(--ok)}
+
+.intro{margin:20px 0 4px;color:var(--soft);font-size:.92rem;display:grid;gap:6px}
+.intro p{margin:0}
+section{margin-top:34px;scroll-margin-top:200px}
+h2{font-family:var(--f-text);font-size:1.25rem;letter-spacing:.1em;margin:0 0 4px;font-weight:700;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font-family:var(--f-ui);font-size:.8rem;color:var(--soft);font-weight:400;letter-spacing:0}
+.lede{color:var(--soft);font-size:.9rem;margin:0 0 12px;max-width:40rem}
+.bulk{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.bulk button{border:1px dashed var(--accent);color:var(--accent);background:transparent;border-radius:999px;padding:6px 12px;font-size:.84rem;cursor:pointer;min-height:36px}
+
+.list{display:grid;gap:10px}
+.item{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;display:grid;gap:8px;min-width:0}
+.item.agree{border-left:4px solid var(--ok)}
+.item.keep,.item.drop{border-left:4px solid var(--soft)}
+.item.discuss{border-left:4px solid var(--warn)}
+.meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.82rem;color:var(--soft)}
+.meta .ch{color:var(--ink);font-family:var(--f-text);font-size:.98rem;letter-spacing:.06em}
+.chip{font-size:.74rem;border-radius:4px;padding:1px 7px;letter-spacing:.04em;white-space:nowrap}
+.c-高{background:var(--ok-bg);color:var(--ok)}
+.c-中{background:var(--hl);color:var(--accent)}
+.c-存疑{background:var(--warn-bg);color:var(--warn)}
+.ctx{font-family:var(--f-text);font-size:1.08rem;line-height:1.9;overflow-wrap:anywhere;margin:0}
+.ctx del{color:var(--zhu);text-decoration-thickness:1.5px;background:var(--zhu-bg);border-radius:3px;padding:0 2px}
+.ctx ins{color:var(--ok);text-decoration:none;background:var(--ok-bg);border-radius:3px;padding:0 2px;margin-left:2px}
+.change{font-family:var(--f-text);font-size:1.02rem;margin:0;overflow-wrap:anywhere}
+.change .arr{color:var(--soft);margin:0 6px;font-family:var(--f-ui)}
+.why{font-size:.88rem;color:var(--soft);margin:0}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:40px;min-width:64px;padding:0 14px;border:1px solid var(--rule);background:transparent;border-radius:8px;cursor:pointer;font-size:.9rem}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.seg button[data-v="discuss"][aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:var(--sheet)}
+.note-in{width:100%;min-height:40px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);padding:8px 10px;font-size:.9rem}
+
+.fmt{display:grid;gap:8px}
+.fopt{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;cursor:pointer}
+.fopt input{width:20px;height:20px;accent-color:var(--accent);grid-row:span 2}
+.fopt .nm{font-weight:500}
+.fopt .tot{font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
+.fopt .sub{grid-column:2/4;font-size:.84rem;color:var(--soft);font-variant-numeric:tabular-nums}
+.fopt.over{opacity:.55;cursor:not-allowed}
+.fopt.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tag-over{color:var(--zhu);font-size:.78rem;font-weight:500}
+
+.cases{display:flex;flex-wrap:wrap;gap:4px}
+.cases span{font-family:var(--f-text);font-size:.88rem;border:1px solid var(--rule);border-radius:4px;padding:0 6px}
+.big{font-family:var(--f-text);font-size:1.6rem;line-height:1}
+
+details.ref{margin-top:10px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px}
+details.ref summary{cursor:pointer;padding:12px 14px;font-weight:500;min-height:44px}
+.ref-body{padding:0 14px 14px;display:grid;gap:10px}
+.filter{display:flex;gap:8px;align-items:center;font-size:.88rem;color:var(--soft)}
+.filter input{width:5.5em;min-height:36px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);padding:0 8px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border-bottom:1px solid var(--rule);padding:6px 8px;text-align:left;vertical-align:top}
+th{font-weight:500;color:var(--soft);font-size:.8rem;white-space:nowrap}
+td.t{font-family:var(--f-text);font-size:1rem}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+textarea#gnote{width:100%;min-height:110px;border:1px solid var(--rule);border-radius:10px;background:var(--sheet);padding:10px 12px;font-size:.95rem}
+.foot{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--accent)}
+#copyOut{width:100%;min-height:160px;font-size:.8rem;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);padding:8px}
+.src{font-size:.8rem;color:var(--soft);margin-top:28px;overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <h1>道德經待確認事項</h1>
+      <span class="prog">已決定 <b id="pDone">0</b> ／ <span id="pAll">0</span></span>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="pBar"></i></div>
+    <div class="save" id="saveState" role="status">正在連線…</div>
+    <nav class="toc" id="toc" aria-label="章節"></nav>
+  </header>
+
+  <div class="intro">
+    <p>每一條點一下你的決定就好，會自動存起來，Claude 之後直接讀取，不必複製貼上。</p>
+    <p>沒把握的選「再討論」，可以順手寫一句原因。錄入錯字的建議都還沒套用；經文的修改會改變該章描寫字數，最好在開始描寫前定案。</p>
+  </div>
+
+  <section id="fmt">
+    <h2>錄音格式 <small>決定網頁大小，上限 16 MB</small></h2>
+    <p class="lede">全書經文錄音約 37 分鐘（曉雨，語速 -10%）。網頁未含錄音時是 1.57 MB。試聽樣本是第二十章，已傳給你。</p>
+    <div class="fmt" id="fmtList"></div>
+  </section>
+
+  <section id="jing">
+    <h2>經文校勘 <small id="jingN"></small></h2>
+    <p class="lede">劃線的是維基文庫原文，綠字是建議。「同意」才會改字；「不改」保留原文。</p>
+    <div class="bulk"><button type="button" data-bulk="jing">可信度「高」的全部同意</button></div>
+    <div class="list" id="jingList"></div>
+  </section>
+
+  <section id="zhu">
+    <h2>注釋校勘 <small id="zhuN"></small></h2>
+    <p class="lede">注釋中疑似錄入錯字。你提過的「幍光養晦」「懷譬其罪」也在其中。「雲治世者」原文其實是「云治世者」（云＝說），是維基文庫自動轉換出錯，已經處理，不在這裡。</p>
+    <div class="bulk"><button type="button" data-bulk="zhu">可信度「高」的全部同意</button></div>
+    <div class="list" id="zhuList"></div>
+  </section>
+
+  <section id="say">
+    <h2>讀音校正表 <small id="sayN"></small></h2>
+    <p class="lede">畫面顯示原文，送給語音引擎的是替代字，用來避免破音字念錯。只用在經文。確認後才產生錄音。替代字反而念得不自然的，可以選「刪除」。</p>
+    <div class="bulk"><button type="button" data-bulk="say">全部同意</button></div>
+    <div class="list" id="sayList"></div>
+  </section>
+
+  <section id="conv">
+    <h2>簡繁轉換規則 <small id="convN"></small></h2>
+    <p class="lede">維基文庫原始碼是簡體字，這些是一對多字的轉換決定（不是改字）。例如「無欲」不轉成「無慾」、「谷神」不轉成「穀神」。</p>
+    <div class="bulk"><button type="button" data-bulk="conv">全部同意</button></div>
+    <div class="list" id="convList"></div>
+  </section>
+
+  <section id="wbref">
+    <h2>與王弼本的出入 <small>僅供參考，不需決定</small></h2>
+    <p class="lede">經文以黃元吉注本為準。大部分是版本異文（近河上公系統），少數是上面校勘表已列的錄入錯誤。【】標出本專案的差異處。</p>
+    <details class="ref">
+      <summary id="wbSum">展開對照表</summary>
+      <div class="ref-body">
+        <label class="filter">只看第 <input id="wbCh" type="number" min="1" max="81" inputmode="numeric" placeholder="全部"> 章</label>
+        <div class="tbl"><table><thead><tr><th>章</th><th>本專案</th><th>王弼本</th><th>位置</th></tr></thead><tbody id="wbBody"></tbody></table></div>
+      </div>
+    </details>
+  </section>
+
+  <section id="note">
+    <h2>其他意見</h2>
+    <textarea id="gnote" placeholder="例如：第五十二章想再看原書；SAY 先只做夫、長、處三條……"></textarea>
+    <div class="foot">
+      <button class="btn ghost" type="button" id="copyBtn">複製我的決定（文字）</button>
+      <span class="save" id="copyMsg"></span>
+    </div>
+    <textarea id="copyOut" readonly hidden aria-label="決定的文字版"></textarea>
+  </section>
+
+  <p class="src" id="srcLine"></p>
+</div>
+
+<script>
+(function(){
+"use strict";
+const D=/*__DATA__*/null;
+const CN="〇一二三四五六七八九";
+const cn=n=>n<10?CN[n]:(Math.floor(n/10)===1?"":CN[Math.floor(n/10)])+"十"+(n%10?CN[n%10]:"");
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const jing=D.corr.filter(x=>x.where==="text"), zhu=D.corr.filter(x=>x.where==="notes");
+const CHOICES={
+  c:[["agree","同意改"],["keep","不改"],["discuss","再討論"]],
+  s:[["agree","同意"],["drop","刪除"],["discuss","再討論"]],
+  v:[["agree","同意"],["discuss","有意見"]]
+};
+// 狀態：{fmt, c:{id:{v,note}}, s:{…}, v:{…}, note}
+let S={fmt:"",c:{},s:{},v:{},note:""};
+const LS="dd-review";
+try{const x=JSON.parse(localStorage.getItem(LS)||"null");if(x&&typeof x==="object")S=Object.assign(S,x);}catch(e){}
+
+/* ---------- 畫面 ---------- */
+function segHTML(kind,id){
+  const cur=(S[kind][id]||{}).v||"";
+  return '<div class="seg" role="group">'+CHOICES[kind].map(([v,l])=>
+    `<button type="button" data-kind="${kind}" data-id="${id}" data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")+"</div>";
+}
+function noteHTML(kind,id){
+  const o=S[kind][id]||{};
+  return `<input class="note-in" id="n-${id}" data-kind="${kind}" data-id="${id}" placeholder="原因或想法（選填）" value="${esc(o.note||"")}"${o.v==="discuss"?"":" hidden"}>`;
+}
+function corrCard(x){
+  const o=S.c[x.id]||{};
+  return `<article class="item ${o.v||""}" id="it-${x.id}">
+    <div class="meta"><span class="ch">第${cn(x.ch)}章　${esc(x.title)}</span><span class="chip c-${x.conf}">可信度 ${x.conf}</span></div>
+    <p class="ctx">${esc(x.ctx[0])}<del>${esc(x.from)}</del><ins>${esc(x.to)}</ins>${esc(x.ctx[2])}</p>
+    <p class="why">${esc(x.why)}</p>
+    ${segHTML("c",x.id)}${noteHTML("c",x.id)}
+  </article>`;
+}
+function sayCard(x){
+  const o=S.s[x.id]||{};
+  return `<article class="item ${o.v||""}" id="it-${x.id}">
+    <p class="change">${esc(x.orig)}<span class="arr">→ 送給語音</span>${esc(x.say)}</p>
+    <div class="meta"><span class="chip c-中">${esc(x.read)}</span>${x.note?`<span>${esc(x.note)}</span>`:""}</div>
+    ${segHTML("s",x.id)}${noteHTML("s",x.id)}
+  </article>`;
+}
+function convCard(x){
+  const o=S.v[x.id]||{};
+  const cases=x.cases.length?`<div class="cases">${x.cases.map(([a,b])=>`<span>${esc(a)} → ${esc(b)}</span>`).join("")}</div>`:"";
+  return `<article class="item ${o.v||""}" id="it-${x.id}">
+    <div class="meta"><span class="big">${esc(x.s)}</span><span>簡體字，${x.default?`一律轉成「${esc(x.default)}」`:"其餘依 OpenCC"}${x.cases.length?"，以下例外：":""}</span></div>
+    ${cases}
+    ${x.why?`<p class="why">${esc(x.why)}</p>`:""}
+    ${segHTML("v",x.id)}${noteHTML("v",x.id)}
+  </article>`;
+}
+function renderFmt(){
+  $("fmtList").innerHTML=D.fmt.map(f=>{
+    const over=/超過/.test(f.total);
+    return `<label class="fopt${over?" over":""}${S.fmt===f.id?" on":""}">
+      <input type="radio" name="fmt" value="${f.id}"${S.fmt===f.id?" checked":""}${over?" disabled":""}>
+      <span class="nm">${esc(f.name)}</span>
+      <span class="tot">${esc(f.total.replace(/（.*）/,""))}${over?' <span class="tag-over">超過上限</span>':""}</span>
+      <span class="sub">錄音 ${esc(f.audio)}・內嵌後 ${esc(f.b64)}</span>
+    </label>`;}).join("");
+}
+function renderAll(){
+  renderFmt();
+  $("jingList").innerHTML=jing.map(corrCard).join("");
+  $("zhuList").innerHTML=zhu.map(corrCard).join("");
+  $("sayList").innerHTML=D.say.map(sayCard).join("");
+  $("convList").innerHTML=D.conv.map(convCard).join("");
+  $("gnote").value=S.note||"";
+  progress();
+}
+function count(list,kind){return list.filter(x=>(S[kind][x.id]||{}).v).length;}
+function progress(){
+  const parts=[["fmt","錄音格式",S.fmt?1:0,1],["jing","經文校勘",count(jing,"c"),jing.length],["zhu","注釋校勘",count(zhu,"c"),zhu.length],
+    ["say","讀音",count(D.say,"s"),D.say.length],["conv","簡繁轉換",count(D.conv,"v"),D.conv.length]];
+  let done=0,all=0;
+  parts.forEach(p=>{done+=p[2];all+=p[3];});
+  $("pDone").textContent=done;$("pAll").textContent=all;$("pBar").style.width=(all?done/all*100:0)+"%";
+  $("toc").innerHTML=parts.map(p=>`<a href="#${p[0]}" class="${p[2]===p[3]?"done":""}">${p[1]}<span class="n">${p[2]}/${p[3]}</span></a>`).join("")+'<a href="#wbref">王弼本對照</a><a href="#note">其他意見</a>';
+  $("jingN").textContent=jing.length+" 條";$("zhuN").textContent=zhu.length+" 條";
+  $("sayN").textContent=D.say.length+" 條";$("convN").textContent=D.conv.length+" 條";
+}
+function renderWb(){
+  const n=parseInt($("wbCh").value,10);
+  const rows=D.wb.filter(r=>!n||r.ch===n);
+  $("wbBody").innerHTML=rows.map(r=>`<tr><td class="n">${r.ch}</td><td class="t">${esc(r.ours)}</td><td class="t">${esc(r.wb)}</td><td class="t">${esc(r.pos)}</td></tr>`).join("")
+    ||'<tr><td colspan="4">這一章與王弼本沒有出入。</td></tr>';
+  $("wbSum").textContent=`展開對照表（${D.wb.length} 處）`;
+}
+
+/* ---------- 互動 ---------- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".seg button");
+  if(b){
+    const {kind,id,v}=b.dataset;
+    const o=S[kind][id]||{};
+    if(o.v===v)delete o.v;else o.v=v;
+    S[kind][id]=o;
+    const card=$("it-"+id);
+    card.className="item "+(o.v||"");
+    card.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===o.v)));
+    const ni=$("n-"+id);ni.hidden=o.v!=="discuss";if(!ni.hidden&&!ni.value)ni.focus();
+    progress();changed();return;
+  }
+  const k=e.target.closest("[data-bulk]");
+  if(k){
+    const which=k.dataset.bulk;
+    const list=which==="jing"?jing:which==="zhu"?zhu:which==="say"?D.say:D.conv;
+    const kind=which==="say"?"s":which==="conv"?"v":"c";
+    list.forEach(x=>{if((kind!=="c"||x.conf==="高")&&!(S[kind][x.id]||{}).v)S[kind][x.id]=Object.assign(S[kind][x.id]||{},{v:"agree"});});
+    renderAll();changed();
+  }
+});
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.classList.contains("note-in")){const o=S[t.dataset.kind][t.dataset.id]||{};o.note=t.value;S[t.dataset.kind][t.dataset.id]=o;changed(1200);}
+  else if(t.id==="gnote"){S.note=t.value;changed(1200);}
+  else if(t.id==="wbCh")renderWb();
+});
+document.addEventListener("change",e=>{
+  if(e.target.name==="fmt"){S.fmt=e.target.value;renderFmt();progress();changed();}
+});
+
+/* ---------- 文字版 ---------- */
+$("copyBtn").addEventListener("click",()=>{
+  const lab=(kind,v)=>(CHOICES[kind].find(c=>c[0]===v)||[,"未決定"])[1];
+  const L=[];
+  L.push("錄音格式："+(S.fmt||"未決定"));
+  L.push("\n【經文校勘】");jing.concat([]).forEach(x=>{const o=S.c[x.id]||{};L.push(`第${x.ch}章 ${x.from}→${x.to}：${lab("c",o.v)}${o.note?"（"+o.note+"）":""}`);});
+  L.push("\n【注釋校勘】");zhu.forEach(x=>{const o=S.c[x.id]||{};L.push(`第${x.ch}章 ${x.from}→${x.to}：${lab("c",o.v)}${o.note?"（"+o.note+"）":""}`);});
+  L.push("\n【讀音】");D.say.forEach(x=>{const o=S.s[x.id]||{};L.push(`${x.orig}→${x.say}：${lab("s",o.v)}${o.note?"（"+o.note+"）":""}`);});
+  L.push("\n【簡繁轉換】");D.conv.forEach(x=>{const o=S.v[x.id]||{};L.push(`${x.s}：${lab("v",o.v)}${o.note?"（"+o.note+"）":""}`);});
+  if(S.note)L.push("\n【其他意見】\n"+S.note);
+  const txt=L.join("\n"),out=$("copyOut");out.value=txt;out.hidden=false;
+  const done=()=>{$("copyMsg").textContent="已複製";};
+  const fallback=()=>{out.focus();out.select();$("copyMsg").textContent="已選取文字，請長按複製";};
+  try{navigator.clipboard.writeText(txt).then(done,fallback);}catch(err){fallback();}
+});
+
+/* ---------- 儲存：db（Claude 讀得到）＋本機備份 ---------- */
+let db=null,ref=null,timer=null,inFlight=false,dirty=false,remoteLoaded=false,touched=false;
+function setSave(t,err){const s=$("saveState");s.textContent=t;s.classList.toggle("err",!!err);}
+function changed(ms){
+  touched=true;
+  try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
+  if(!ref){setSave("只存在這台裝置的瀏覽器（Claude 讀不到）。可用最下方「複製我的決定」傳給 Claude。",!db);return;}
+  dirty=true;setSave("儲存中…");
+  clearTimeout(timer);timer=setTimeout(flush,ms||600);
+}
+async function flush(){
+  if(inFlight||!dirty)return;
+  inFlight=true;dirty=false;
+  try{await ref.set(Object.assign({},S,{updated:new Date().toISOString()}));setSave("已儲存，Claude 可以讀取");}
+  catch(e){dirty=true;setSave(e&&e.code==="invalid_argument"?"這個帳號無法儲存，請用最下方「複製我的決定」":"暫時無法儲存，稍後會再試",true);}
+  inFlight=false;
+  if(dirty){clearTimeout(timer);timer=setTimeout(flush,1500);}
+}
+renderAll();renderWb();
+const s=D.source;
+$("srcLine").textContent=`資料來源：維基文庫〈道德經注釋 (黃元吉)〉oldid ${s.oldid}（${s.rev_timestamp.slice(0,10)}），${s.fetched} 取得。完整說明見專案 SOURCES.md。`;
+setSave("正在連線…");
+const giveUp=setTimeout(()=>{if(!remoteLoaded)setSave("連不上雲端儲存，選擇先存在這台裝置；可用最下方「複製我的決定」傳給 Claude。",true);},10000);
+(window.claude&&window.claude.use?window.claude.use("db"):Promise.resolve(null)).then(d=>{
+  if(!d){clearTimeout(giveUp);setSave("只存在這台裝置的瀏覽器（Claude 讀不到）。可用最下方「複製我的決定」傳給 Claude。");return;}
+  db=d;ref=db.doc("review/decisions");
+  ref.onSnapshot(snap=>{
+    if(snap.metadata.fromCache)return;
+    clearTimeout(giveUp);
+    const first=!remoteLoaded;remoteLoaded=true;
+    if(snap.exists&&!snap.metadata.hasPendingWrites&&!touched){
+      const r=snap.data();S={fmt:r.fmt||"",c:Object.assign({},r.c||{}),s:Object.assign({},r.s||{}),v:Object.assign({},r.v||{}),note:r.note||""};
+      try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
+      renderAll();
+    }
+    if(first){
+      if(!snap.exists&&(S.fmt||Object.keys(S.c).length||Object.keys(S.s).length||Object.keys(S.v).length||S.note)){dirty=true;flush();}
+      else setSave(snap.exists?"已載入先前的選擇":"還沒有任何選擇，點一下就會自動儲存");
+    }
+  },err=>{clearTimeout(giveUp);setSave("無法連線儲存，選擇先存在這台裝置。",true);});
+}).catch(()=>{});
+})();
+</script>

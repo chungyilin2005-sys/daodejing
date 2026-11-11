@@ -20,7 +20,7 @@ daodejing/
 ├── data/notes/01.txt～81.txt       各章注釋（段落以空行分隔；fetch 產生，勿手改）
 ├── data/preface.txt                黃元吉自序（fetch 產生，勿手改）
 ├── data/convert_rules.json         簡轉繁一對多字的上下文規則
-├── data/corrections.json           使用者確認過的錄入錯字修正（建置時套用；尚未建立）
+├── data/corrections.json           使用者確認過的錄入錯字修正（67 條，建置時套用）
 ├── data/corrections.proposed.json  校勘建議（未套用）
 ├── data/raw/source.json            來源網址、oldid、SHA-1、取得日期
 ├── data/raw/*.wiki                 下載的原始碼（含蕭天石例言，不進 git）

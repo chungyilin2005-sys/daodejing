@@ -5,3 +5,4 @@ Thumbs.db
 .env
 samples/
 data/raw/*.wiki
+review/
