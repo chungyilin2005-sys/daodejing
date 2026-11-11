@@ -87,6 +87,8 @@ main{flex:1;min-height:0;position:relative}
 /* 白話：逐句對照時接在每句經文後；章末時另成一段（橫排展開、直排開面板） */
 .pl{display:block;font-family:var(--sutra-font);font-size:var(--nfs);line-height:1.9;letter-spacing:.04em;color:var(--ink-soft);margin-block:.25em .95em;transition:color .25s}
 .pl.on{color:var(--accent)}
+.cl.on2{background:var(--hl)}
+#sutra .pl,.notes .pl{cursor:pointer}
 .notes .pl{margin-block:0 1em}
 .pl-src{display:block;font-size:13px;line-height:1.7;letter-spacing:.04em;color:var(--ink-soft);margin-block:.6em 0}
 .prose{font-family:var(--sutra-font);font-size:var(--nfs);line-height:2.1;letter-spacing:.08em}
@@ -248,6 +250,8 @@ main{flex:1;min-height:0;position:relative}
   </header>
   <div class="scroll v" id="notesScroll"></div>
   <div class="bar">
+    <button class="btn sq" data-nfs="-1" aria-label="注釋字縮小">小</button>
+    <button class="btn sq" data-nfs="1" aria-label="注釋字放大">大</button>
     <button class="btn primary" id="nPlay">朗讀注釋</button>
     <button class="btn sq" id="nStop" aria-label="停止" disabled>
       <svg viewBox="0 0 24 24" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></svg>
@@ -263,6 +267,10 @@ main{flex:1;min-height:0;position:relative}
     <h2 id="plainTitle">白話</h2>
   </header>
   <div class="scroll v" id="plainScroll"></div>
+  <div class="bar">
+    <button class="btn sq" data-nfs="-1" aria-label="白話字縮小">小</button>
+    <button class="btn sq" data-nfs="1" aria-label="白話字放大">大</button>
+  </div>
 </div>
 
 <div class="overlay" id="menuView" aria-label="章節">
@@ -301,6 +309,13 @@ main{flex:1;min-height:0;position:relative}
   <div class="row" id="pitchRow"><span>音高</span><input type="range" id="pitchRange" min="0.7" max="1.3" step="0.05" aria-label="音高"><output id="pitchOut"></output></div>
   <div class="row" style="margin-top:10px"><button class="btn" id="testVoice">試聽</button></div>
   <p class="note" id="voiceNote"></p>
+  <h3>朗讀白話</h3>
+  <div class="seg" id="readPlainSeg">
+    <button data-rp="off" aria-pressed="true">不念</button>
+    <button data-rp="after" aria-pressed="false">整章接念</button>
+    <button data-rp="inter" aria-pressed="false">逐句交錯</button>
+  </div>
+  <p class="note">「整章接念」念完整章經文再念白話；「逐句交錯」每念一句經文就接著念那一句的白話。白話沒有預錄，會用 Claude 語音或手機語音念；選「逐句交錯」時，經文也改用同一種語音。用 Claude 語音時，白話換一種聲線。沒開白話顯示時，念到白話會暫時顯示，念完收回。點任一句白話可從那一句開始念。</p>
   <h3>朗讀注釋</h3>
   <label class="opt"><input type="checkbox" id="readNotes"> 念完經文接著念黃元吉注釋</label>
   <p class="note">注釋很長，隨時可按停止。也可以打開注釋，點段落前的 ▶ 從那一段開始念。注釋沒有預錄，會用 Claude 語音或手機語音朗讀。</p>
@@ -313,8 +328,9 @@ main{flex:1;min-height:0;position:relative}
   <p class="note">白話由 Claude 依黃元吉注意譯，未經專家審訂，僅供參考。「逐句對照」把白話接在每句經文後面；「章末」在經文後放一個「白話」按鈕。字級跟注釋相同。</p>
   <h3>經文字級</h3>
   <div class="row"><input type="range" id="fsRange" min="16" max="60" step="1" aria-label="經文字級"><output id="fsOut"></output></div>
-  <h3>注釋字級</h3>
-  <div class="row"><input type="range" id="nfsRange" min="14" max="40" step="1" aria-label="注釋字級"><output id="nfsOut"></output></div>
+  <h3>注釋與白話字級</h3>
+  <div class="row"><input type="range" id="nfsRange" min="14" max="40" step="1" aria-label="注釋與白話字級"><output id="nfsOut"></output></div>
+  <p class="note">讀誦畫面下方的「小」「大」會同時調整經文、注釋與白話；注釋、白話面板裡的「小」「大」只調整注釋與白話。</p>
   <h3>排版</h3>
   <div class="seg" id="layoutSeg">
     <button data-layout="v" aria-pressed="true">直排</button>
@@ -381,7 +397,7 @@ function unstore(k){try{localStorage.removeItem(k);}catch(e){}}
 var toastT;
 function toast(msg,ms){var t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("on");},ms||2600);}
 
-var S=Object.assign({fs:26,nfs:18,layout:"v",font:"wenkai",pen:4,rate:0.8,theme:"auto",engine:"auto",cvoice:"buttery",dvoice:"",pitch:1,readNotes:false,plain:"off"},load("dd.set",{}));
+var S=Object.assign({fs:26,nfs:18,layout:"v",font:"wenkai",pen:4,rate:0.8,theme:"auto",engine:"auto",cvoice:"buttery",dvoice:"",pitch:1,readNotes:false,plain:"off",readPlain:"off"},load("dd.set",{}));
 function saveS(){store("dd.set",S);}
 
 /* ---------- 章節資料 ---------- */
@@ -478,7 +494,7 @@ function buildRead(){
   var b=document.createElement("p");b.className="body";
   var off=0,inl=c.d.inline||[];
   var ps=plainSents(cn),byEnd={};
-  if(S.plain==="line")ps.forEach(function(x){byEnd[x.b]=x;});
+  if(effPlain()==="line")ps.forEach(function(x){byEnd[x.b]=x;});
   for(var i=1;i<c.clauses.length;i++){
     var s=document.createElement("span");s.className="cl";s.dataset.i=String(i);
     var txt=c.clauses[i],from=0;
@@ -494,10 +510,10 @@ function buildRead(){
     if(byEnd[i])b.appendChild(plSpan(byEnd[i],"span"));
   }
   el.append(h,b);
-  if(S.plain==="line"&&ps.length){var src=document.createElement("p");src.className="pl-src";src.textContent=PLAIN_SRC;el.appendChild(src);}
+  if(effPlain()==="line"&&ps.length){var src=document.createElement("p");src.className="pl-src";src.textContent=PLAIN_SRC;el.appendChild(src);}
   // 白話（章末）
   plainEl=null;
-  if(S.plain==="end"&&ps.length){
+  if(effPlain()==="end"&&ps.length){
     plainEl=document.createElement("div");plainEl.className="notes";
     ps.forEach(function(x){plainEl.appendChild(plSpan(x,"p"));});
     var src2=document.createElement("p");src2.className="pl-src";src2.textContent=PLAIN_SRC;plainEl.appendChild(src2);
@@ -531,6 +547,19 @@ function buildRead(){
 /* ---------- 白話（data/plain.json，Claude 依黃元吉注意譯；build.py 只放已校對的句子）---------- */
 var PLAIN_SRC="白話：Claude 依黃元吉注意譯，未經專家審訂，僅供參考";
 var plainEl=null,plainOpen=false;
+// 朗讀白話時若畫面沒顯示白話，暫時改用 plainTemp（"line" 或 "end"）顯示，念完收回
+var plainTemp="";
+function effPlain(){return plainTemp||S.plain;}
+function plainOpenPanel(){
+  if(!plainEl)return;
+  if(S.layout==="h"){if(!plainOpen){plainOpen=true;placePlain();}}
+  else{$("notesView").classList.remove("on");$("plainView").classList.add("on");}
+}
+function ensurePlainShown(need){
+  if((need==="line"&&effPlain()!=="line")||(need==="end"&&effPlain()==="off")){plainTemp=need;buildRead();}
+  if(effPlain()==="end")plainOpenPanel();
+}
+function plainRestore(){if(plainTemp){plainTemp="";plainOpen=false;$("plainView").classList.remove("on");buildRead();}}
 function plainSents(n){ // 依整句（到「。：！？」）切分，回傳有白話的句子 [{a,b,text}]
   var P=DATA.plain&&DATA.plain[String(n)];if(!P)return [];
   var cl=CH(n).clauses,out=[],i=1;
@@ -559,10 +588,17 @@ $("plainToggle").onclick=function(){
   else $("plainView").classList.add("on");
 };
 $("closePlain").onclick=function(){$("plainView").classList.remove("on");};
-function applyPlainUI(){document.querySelectorAll("#plainSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plain===S.plain));});}
+function applyPlainUI(){
+  document.querySelectorAll("#plainSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.plain===S.plain));});
+  document.querySelectorAll("#readPlainSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.rp===S.readPlain));});
+}
+document.querySelectorAll("#readPlainSeg button").forEach(function(b){b.onclick=function(){
+  if(S.readPlain===b.dataset.rp)return;
+  stopAll();S.readPlain=b.dataset.rp;saveS();applyPlainUI();
+};});
 document.querySelectorAll("#plainSeg button").forEach(function(b){b.onclick=function(){
   if(S.plain===b.dataset.plain)return;
-  S.plain=b.dataset.plain;saveS();applyPlainUI();plainOpen=false;buildRead();
+  S.plain=b.dataset.plain;saveS();applyPlainUI();plainOpen=false;plainTemp="";buildRead();
   if(state!=="idle"&&mode==="jing")mark(cur,sentenceEnd(cur));
 };});
 // 橫排：注釋在經文下方展開；直排：注釋另開面板
@@ -600,8 +636,17 @@ function applyFs(){
   $("fsRange").value=S.fs;$("fsOut").textContent=S.fs+" px";
   $("nfsRange").value=S.nfs;$("nfsOut").textContent=S.nfs+" px";
 }
-$("fsUp").onclick=function(){S.fs=Math.min(60,S.fs+3);applyFs();saveS();};
-$("fsDown").onclick=function(){S.fs=Math.max(16,S.fs-3);applyFs();saveS();};
+// 讀誦畫面下方的「小」「大」：經文 ±3 px，注釋與白話 ±2 px 一起調整
+function bumpText(d){
+  S.fs=Math.min(60,Math.max(16,S.fs+3*d));S.nfs=Math.min(40,Math.max(14,S.nfs+2*d));
+  applyFs();saveS();toast("經文 "+S.fs+" px・注釋與白話 "+S.nfs+" px",1400);
+}
+$("fsUp").onclick=function(){bumpText(1);};
+$("fsDown").onclick=function(){bumpText(-1);};
+// 注釋、白話面板裡的「小」「大」：只調整注釋與白話
+document.querySelectorAll("[data-nfs]").forEach(function(b){b.onclick=function(){
+  S.nfs=Math.min(40,Math.max(14,S.nfs+2*(+b.dataset.nfs)));applyFs();saveS();toast("注釋與白話 "+S.nfs+" px",1400);
+};});
 $("fsRange").oninput=function(e){S.fs=+e.target.value;applyFs();saveS();};
 $("nfsRange").oninput=function(e){S.nfs=+e.target.value;applyFs();saveS();};
 document.querySelectorAll("#layoutSeg button").forEach(function(b){b.onclick=function(){S.layout=b.dataset.layout;saveS();applyLayout();renderGrid(true);};});
@@ -616,9 +661,9 @@ $("nextChap").onclick=function(){go("read",cn+1);};
 
 /* ---------- 讀誦：語音 ---------- */
 // 引擎：rec = 預錄；claude = Claude 語音（tts 能力，整句一行送出）；native = 手機的 speechSynthesis（逐句送出）
-// 位置：mode "jing"（經文，cur 為子句序）或 "note"（注釋，np 段、nsi 句）
+// 位置：mode "jing"（經文，cur 為子句序）、"plain"（白話，pk 為 plainSents 的序）或 "note"（注釋，np 段、nsi 句）
 var RATES=[0.6,0.7,0.8,1,1.2];
-var cur=0,mode="jing",np=0,nsi=0,state="idle",token=0,voice=null,eng=null,claudeTts=null,claudeOff=false,dvoices=[];
+var cur=0,mode="jing",pk=0,np=0,nsi=0,state="idle",token=0,voice=null,eng=null,claudeTts=null,claudeOff=false,dvoices=[];
 // 預錄朗讀：build.py 由 audio/ 內嵌 {voice, chapters:{"1":[{id:"起-迄", type, b64}]}}；沒有音檔時為 null
 var REC=/*__AUDIO__*/null;
 var VOICE_NAMES={"zh-TW-HsiaoYuNeural":"曉雨","zh-TW-HsiaoChenNeural":"曉臻","zh-TW-YunJheNeural":"雲哲"};
@@ -700,7 +745,24 @@ function noteEngine(){
   if(claudeTts)return claudeOff?null:"claude";
   return hasNative?"native":null;
 }
-function clearMarks(){document.querySelectorAll(".cl.on,.ns.on,.pl.on").forEach(function(e){e.classList.remove("on");});}
+function clearMarks(){document.querySelectorAll(".cl.on,.cl.on2,.ns.on,.pl.on").forEach(function(e){e.classList.remove("on");e.classList.remove("on2");});}
+// 念白話時：該句白話標亮，對應的經文淡淡陪著標亮
+function markPlain(k){
+  clearMarks();
+  var x=plainSents(cn)[k];if(!x)return;
+  for(var i=x.a;i<=x.b;i++){var el=document.querySelector('.cl[data-i="'+i+'"]');if(el)el.classList.add("on2");}
+  var pls=[].slice.call(document.querySelectorAll('#sutra .pl[data-a="'+x.a+'"]'));
+  if(plainEl)pls=pls.concat([].slice.call(plainEl.querySelectorAll('.pl[data-a="'+x.a+'"]')));
+  pls.forEach(function(p){p.classList.add("on");});
+  var vis=pls.filter(function(p){return p.offsetParent!==null;})[0];
+  if(vis)vis.scrollIntoView({block:"center",inline:"center",behavior:"smooth"});
+}
+function plainMode(){return S.readPlain==="inter"?"inter":"after";}
+function wantPlain(){return S.readPlain!=="off"&&plainSents(cn).length>0;}
+// 白話念法：全形括號改成停頓，其餘照念
+function spokenPlain(t){return t.replace(/（/g,"，").replace(/）/g,"，").replace(/，+/g,"，").replace(/，([。？！；：」])/g,"$1").replace(/，$/,"。");}
+// Claude 語音念白話時換一種聲線，與經文區別
+function plainVoice(){return S.cvoice==="airy"?"buttery":"airy";}
 function mark(a,b){
   clearMarks();
   if(a<0)return;
@@ -732,11 +794,41 @@ function nativeSay(i,my){
   if(my!==token)return;
   var cl=CH(cn).clauses;
   if(i>=cl.length){jingDone(my);return;}
-  cur=i;mark(i);
+  cur=i;mode="jing";mark(i);
   var u=utter(spoken(cl[i]));
-  u.onend=function(){if(my!==token)return;setTimeout(function(){nativeSay(i+1,my);},(i===0||/[。：！？]」?$/.test(cl[i]))?380:120);};
+  u.onend=function(){
+    if(my!==token)return;
+    var next=function(){nativeSay(i+1,my);};
+    var gap=(i===0||/[。：！？]」?$/.test(cl[i]))?380:120;
+    // 逐句交錯：句末且有白話，先念白話
+    var ps=S.readPlain==="inter"?plainSents(cn):[],k=-1;
+    for(var q=0;q<ps.length;q++)if(ps[q].b===i){k=q;break;}
+    if(k>=0)setTimeout(function(){nativePlainOne(k,my,next);},gap);
+    else setTimeout(next,gap);
+  };
   u.onerror=nativeErr(my);
   speechSynthesis.speak(u);
+}
+// 手機語音念一句白話（長句依逗號切開），念完呼叫 done
+function nativePlainOne(k,my,done){
+  if(my!==token)return;
+  var x=plainSents(cn)[k];if(!x){done();return;}
+  mode="plain";pk=k;markPlain(k);
+  var chunks=noteChunks(spokenPlain(x.text)),c=0;
+  (function next(){
+    if(my!==token)return;
+    if(c>=chunks.length){setTimeout(done,380);return;}
+    var u=utter(chunks[c++]);
+    u.onend=function(){if(my!==token)return;next();};
+    u.onerror=nativeErr(my);
+    speechSynthesis.speak(u);
+  })();
+}
+// 整章接念：從第 k 句白話念到最後
+function nativePlainSeq(k,my){
+  if(my!==token)return;
+  if(k>=plainSents(cn).length){plainDone(my);return;}
+  nativePlainOne(k,my,function(){nativePlainSeq(k+1,my);});
 }
 function nativeErr(my){return function(ev){if(my!==token)return;if(ev.error==="interrupted"||ev.error==="canceled")return;toast("朗讀中斷了，請再按一次「繼續」");state="paused";setUI();};}
 // 注釋逐句送出；太長的句子再依逗號切開，避免 Android 長句中斷
@@ -764,16 +856,24 @@ function nativeNote(p,s,my){
 }
 // 句末（。：！？）的子句序；章名自成一句
 function sentenceEnd(i){if(i===0)return 0;var cl=CH(cn).clauses,j=i;while(j<cl.length-1&&!/[。：！？]」?$/.test(cl[j]))j++;return j;}
-function claudeLines(from,withNotes){
-  var lines=[],cl=CH(cn).clauses;
+// 經文從子句 from 念起；startPk 有值時（逐句交錯續念）先念第 startPk 句白話
+function claudeLines(from,withNotes,startPk){
+  var lines=[],cl=CH(cn).clauses,ps=S.readPlain!=="off"?plainSents(cn):[],byEnd={};
+  ps.forEach(function(x,k){byEnd[x.b]=k;});
+  var inter=S.readPlain==="inter";
+  if(startPk!=null)lines.push(plainLine(startPk));
   for(var i=from;i<cl.length;){
     var e=sentenceEnd(i);
     lines.push({text:i===0?spoken(chapName(cn)+"，"+CH(cn).d.title+"。"):spoken(cl.slice(i,e+1).join("")),id:"j:"+i+"-"+e});
+    if(inter&&byEnd[e]!=null)lines.push(plainLine(byEnd[e]));
     i=e+1;
   }
+  if(!inter&&ps.length)lines=lines.concat(plainLines(0));
   if(withNotes)lines=lines.concat(noteLines(0,0));
   return lines;
 }
+function plainLine(k){return {text:spokenPlain(plainSents(cn)[k].text),id:"p:"+k,voice:plainVoice()};}
+function plainLines(k){var out=[],n=plainSents(cn).length;for(;k<n;k++)out.push(plainLine(k));return out;}
 function noteLines(p,s){
   var lines=[],ns=CH(cn).notes;
   for(var a=p;a<ns.length;a++)for(var b=(a===p?s:0);b<ns[a].length;b++)lines.push({text:spokenNote(ns[a][b]),id:"n:"+a+":"+b});
@@ -783,7 +883,7 @@ function claudeOpts(){return {voice:S.cvoice,rate:Math.max(0.7,S.rate),language:
 function claudeFail(err){
   var c=err&&err.code;
   if(c==="stopped"){if(err.reason!=="replaced"&&state!=="paused")finish();return;}
-  if(c==="no_gesture"&&mode==="note"){state="paused";eng=null;setUI();toast("請按「繼續」朗讀注釋");return;}
+  if(c==="no_gesture"&&(mode==="note"||mode==="plain")){state="paused";eng=null;setUI();toast(mode==="note"?"請按「繼續」朗讀注釋":"請按「繼續」朗讀白話");return;}
   finish();
   if(c==="not_granted"){claudeOff=true;renderVoiceUI();noSpeech();}
   else if(c==="unavailable"){claudeTts=null;renderVoiceUI();toast("目前無法使用 Claude 語音，已改用手機語音，請再按一次「朗讀」",5000);}
@@ -796,16 +896,47 @@ function claudeSpeak(lines,my){
   claudeTts.speak(lines,claudeOpts()).then(function(){if(my===token&&state==="playing")finish();})
     .catch(function(err){if(my===token)claudeFail(err);});
 }
-function finish(){state="idle";mode="jing";cur=0;np=0;nsi=0;clearMarks();setUI();}
-// 經文念完：開了「朗讀注釋」就接著念注釋
+function finish(){state="idle";mode="jing";cur=0;pk=0;np=0;nsi=0;clearMarks();plainRestore();setUI();}
+// 經文念完：整章接念就念白話；開了「朗讀注釋」就接著念注釋
 function jingDone(my){
+  if(my!==token)return;
+  if(wantPlain()&&plainMode()==="after"){playPlain(0);return;}
+  if(S.readNotes&&CH(cn).notes.length){playNotes(0,0);return;}
+  finish();
+}
+// 白話（整章接念）念完
+function plainDone(my){
   if(my!==token)return;
   if(S.readNotes&&CH(cn).notes.length){playNotes(0,0);return;}
   finish();
 }
+// 從第 k 句白話念起：整章接念時念到白話結尾；逐句交錯時接著念下一句經文
+function playPlain(k){
+  var ps=plainSents(cn),x=ps[k];
+  if(!x){finish();return;}
+  var e=noteEngine();
+  if(!e){finish();noSpeech();return;}
+  if(eng==="rec"&&audio)audio.pause();
+  if(eng==="native"||e==="native"){try{speechSynthesis.cancel();}catch(z){}}
+  if(eng==="claude"&&claudeTts&&claudeTts.active&&claudeTts.active())claudeTts.stop().catch(function(){});
+  eng=e;token++;var my=token;mode="plain";pk=k;cur=x.a;
+  state="playing";setUI();
+  var inter=plainMode()==="inter";
+  ensurePlainShown(inter?"line":"end");
+  markPlain(k);
+  if(e==="native")setTimeout(function(){
+    if(inter)nativePlainOne(k,my,function(){nativeSay(x.b+1,my);});
+    else nativePlainSeq(k,my);
+  },60);
+  else claudeSpeak(inter?claudeLines(x.b+1,S.readNotes,k):plainLines(k).concat(S.readNotes?noteLines(0,0):[]),my);
+}
 function play(from){
   eng=engineNow();
   if(!eng){noSpeech();return;}
+  // 逐句交錯：白話沒有預錄，經文也改用 Claude 語音或手機語音
+  if(eng==="rec"&&wantPlain()&&plainMode()==="inter")eng=noteEngine();
+  if(!eng){noSpeech();return;}
+  if(wantPlain()&&plainMode()==="inter")ensurePlainShown("line");
   token++;var my=token;mode="jing";
   if(eng==="native"){
     speechSynthesis.cancel();
@@ -826,6 +957,7 @@ function playNotes(p,s){
   if(eng==="claude"&&claudeTts&&claudeTts.active&&claudeTts.active())claudeTts.stop().catch(function(){});
   eng=e;token++;var my=token;mode="note";np=p;nsi=s;
   state="playing";setUI();
+  $("plainView").classList.remove("on");
   if(!notesVisible())openNotes();
   markNote(p,s);
   if(e==="native")setTimeout(function(){nativeNote(p,s,my);},60);
@@ -840,6 +972,7 @@ function pause(){
 function resume(){
   if(eng==="claude"&&claudeTts&&claudeTts.active()){claudeTts.resume().catch(function(){});state="playing";setUI();}
   else if(mode==="note")playNotes(np,nsi);
+  else if(mode==="plain")playPlain(pk);
   else if(eng==="rec"&&engineNow()==="rec"){token++;state="playing";setUI();recPlay(recIdx,token,recPos);}
   else play(cur);
 }
@@ -867,12 +1000,13 @@ $("rate").onclick=function(){
   var k=RATES.indexOf(S.rate);S.rate=RATES[(k+1)%RATES.length];saveS();setUI();
   if(state==="playing"){
     if(eng==="rec")audio.defaultPlaybackRate=audio.playbackRate=recRate();
-    else if(eng==="native"){if(mode==="note")playNotes(np,nsi);else play(cur);}
+    else if(eng==="native"){if(mode==="note")playNotes(np,nsi);else if(mode==="plain")playPlain(pk);else play(cur);}
     else if(eng==="claude"&&claudeTts.setRate)claudeTts.setRate(Math.max(0.7,S.rate)).catch(function(){});
   }
 };
 $("sutra").addEventListener("click",function(e){
   if(e.target.closest(".imark")){openNotes();return;}
+  if(onPlainClick(e))return;
   var el=e.target.closest(".cl");if(!el)return;
   var i=+el.dataset.i;cur=i;
   if(!engineNow()){mark(i);noSpeech();return;}
@@ -884,6 +1018,15 @@ function onNotesClick(e){
 }
 $("notesInline").addEventListener("click",onNotesClick);
 $("notesScroll").addEventListener("click",onNotesClick);
+// 點白話：從那一句白話開始念
+function onPlainClick(e){
+  var p=e.target.closest(".pl");if(!p)return false;
+  var a=+p.dataset.a,ps=plainSents(cn);
+  for(var k=0;k<ps.length;k++)if(ps[k].a===a){playPlain(k);return true;}
+  return false;
+}
+$("plainInline").addEventListener("click",onPlainClick);
+$("plainScroll").addEventListener("click",onPlainClick);
 
 /* ---------- 朗讀聲音設定 ---------- */
 function renderVoiceUI(){
@@ -946,7 +1089,8 @@ if(window.claude&&window.claude.use){
     t.onLine(function(o){
       if(eng!=="claude"||!o||!o.id||o.id==="test"||state==="idle")return;
       var id=String(o.id);
-      if(id.indexOf("n:")===0){var q=id.split(":");mode="note";np=+q[1];nsi=+q[2];if(!notesVisible())openNotes();markNote(np,nsi);}
+      if(id.indexOf("n:")===0){var q=id.split(":");mode="note";np=+q[1];nsi=+q[2];$("plainView").classList.remove("on");if(!notesVisible())openNotes();markNote(np,nsi);}
+      else if(id.indexOf("p:")===0){mode="plain";pk=+id.slice(2);ensurePlainShown(plainMode()==="inter"?"line":"end");markPlain(pk);}
       else{var p=id.slice(2).split("-");mode="jing";cur=+p[0];mark(+p[0],+p[1]);}
     });
     t.onState(function(e){
@@ -1330,6 +1474,7 @@ window.addEventListener("hashchange",function(){var p=parseHash();show(p.v,p.n);
 
 /* ---------- 啟動 ---------- */
 if(["off","end","line"].indexOf(S.plain)<0)S.plain="off";
+if(["off","after","inter"].indexOf(S.readPlain)<0)S.readPlain="off";
 buildPreface();applyFs();setUI();renderVoiceUI();applyPlainUI();
 $("penRange").value=S.pen;$("penOut").textContent=S.pen;
 if(typeof ResizeObserver!=="undefined")new ResizeObserver(function(){if($("view-trace").classList.contains("on"))layoutCell();}).observe($("stage"));
