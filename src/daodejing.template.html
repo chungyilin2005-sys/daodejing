@@ -315,7 +315,7 @@ main{flex:1;min-height:0;position:relative}
     <button data-rp="after" aria-pressed="false">整章接念</button>
     <button data-rp="inter" aria-pressed="false">逐句交錯</button>
   </div>
-  <p class="note">「整章接念」念完整章經文再念白話；「逐句交錯」每念一句經文就接著念那一句的白話。白話沒有預錄，會用 Claude 語音或手機語音念；選「逐句交錯」時，經文也改用同一種語音。用 Claude 語音時，白話換一種聲線。沒開白話顯示時，念到白話會暫時顯示，念完收回。點任一句白話可從那一句開始念。</p>
+  <p class="note">「整章接念」念完整章經文再念白話；「逐句交錯」每念一句經文就接著念那一句的白話。白話沒有預錄，會用 Claude 語音或手機語音念，聲音自動和經文不同：Claude 語音換一種聲線；手機語音換另一個中文語音，沒有的話把音高調低一些。預錄選「逐句交錯」時，經文仍用預錄，白話用手機語音穿插（手機沒有中文語音時，經文改用 Claude 語音）。開了朗讀白話時，「試聽」會念一句經文再念一句白話。沒開白話顯示時，念到白話會暫時顯示，念完收回。點任一句白話可從那一句開始念。</p>
   <h3>朗讀注釋</h3>
   <label class="opt"><input type="checkbox" id="readNotes"> 念完經文接著念黃元吉注釋</label>
   <p class="note">注釋很長，隨時可按停止。也可以打開注釋，點段落前的 ▶ 從那一段開始念。注釋沒有預錄，會用 Claude 語音或手機語音朗讀。</p>
@@ -684,16 +684,35 @@ function recInit(n){
 // 錄音以 0.8 為原速；語速設定換算成播放速度（Chrome 預設保持音高）
 function recRate(){return S.rate/0.8;}
 function recFind(i){var r=recRanges[cn];for(var k=0;k<r.length;k++)if(r[k][0]<=i&&i<=r[k][1])return k;return 0;}
+// 第 a～b 子句之間結束的白話句序；沒有則 -1
+function plainAt(a,b){var ps=plainSents(cn);for(var q=0;q<ps.length;q++)if(a<=ps[q].b&&ps[q].b<=b)return q;return -1;}
+// 經文從子句 i 接著念（白話念完後）：預錄＋逐句交錯時回到預錄，否則用手機語音
+function jingFrom(i,my){
+  if(my!==token)return;
+  if(mixedRec()){
+    recInit(cn);eng="rec";mode="jing";
+    var r=recRanges[cn],k=0;while(k<r.length&&r[k][1]<i)k++;
+    recPlay(k,my,0);
+  }else nativeSay(i,my);
+}
 function recPlay(k,my,pos){
   if(my!==token)return;
   var urls=recUrls[cn];
   if(k>=urls.length){jingDone(my);return;}
-  recIdx=k;recPos=0;
+  recIdx=k;recPos=0;mode="jing";
   var r=recRanges[cn][k];cur=r[0];mark(r[0],r[1]);
   audio.onended=function(){
     if(my!==token)return;
     recIdx=k+1;recPos=0;
-    setTimeout(function(){recPlay(k+1,my,0);},k===0?600:420);
+    var next=function(){recPlay(k+1,my,0);};
+    // 預錄＋逐句交錯：句末有白話時，用手機語音念完白話再回到預錄
+    var q=mixedRec()?plainAt(r[0],r[1]):-1;
+    if(q>=0)setTimeout(function(){
+      if(my!==token)return;
+      eng="native";
+      nativePlainOne(q,my,function(){eng="rec";next();});
+    },420);
+    else setTimeout(next,k===0?600:420);
   };
   audio.src=urls[k];
   audio.defaultPlaybackRate=audio.playbackRate=recRate();
@@ -723,6 +742,13 @@ function pickVoice(){
   voice=dvoices.find(function(v){return v.voiceURI===S.dvoice;})||dvoices[0]||null;
   renderVoiceUI();
 }
+// 手機語音念白話：自動挑同一類（同 zhRank）的另一個語音；沒有就用同一個語音、音高降為 0.85 倍
+function plainDVoice(){
+  if(!voice)return null;
+  var r=zhRank(voice);
+  return dvoices.find(function(v){return v!==voice&&zhRank(v)===r;})||null;
+}
+function plainPitch(){return plainDVoice()?S.pitch:Math.max(0.5,Math.round(S.pitch*0.85*100)/100);}
 // 使用者想要的引擎（auto 的順序：預錄 → Claude 語音 → 手機語音）
 function wantEngine(){
   var w=S.engine;
@@ -745,6 +771,10 @@ function noteEngine(){
   if(claudeTts)return claudeOff?null:"claude";
   return hasNative?"native":null;
 }
+// 預錄＋逐句交錯：經文仍用預錄，白話用手機語音穿插（手機語音不受 Claude 語音的使用者手勢限制）
+function mixedRec(){return engineNow()==="rec"&&wantPlain()&&plainMode()==="inter"&&hasNative&&dvoices.length>0;}
+// 白話用的引擎
+function plainEngine(){return mixedRec()?"native":noteEngine();}
 function clearMarks(){document.querySelectorAll(".cl.on,.cl.on2,.ns.on,.pl.on").forEach(function(e){e.classList.remove("on");e.classList.remove("on2");});}
 // 念白話時：該句白話標亮，對應的經文淡淡陪著標亮
 function markPlain(k){
@@ -784,10 +814,13 @@ function setUI(){
   $("nPlay").textContent=state==="playing"?"暫停":(state==="paused"?"繼續":"朗讀注釋");
   $("rate").textContent="語速 "+(S.rate===1?"1.0":S.rate);
 }
-function utter(text){
+// plain 為真且經文也用手機語音時，白話換語音或音高，與經文區別
+function utter(text,plain){
+  var v=voice,p=S.pitch;
+  if(plain&&engineNow()==="native"){v=plainDVoice()||voice;p=plainPitch();}
   var u=new SpeechSynthesisUtterance(text);
-  u.lang=voice&&voice.lang?voice.lang:"zh-TW";if(voice)u.voice=voice;
-  u.rate=S.rate;u.pitch=S.pitch;
+  u.lang=v&&v.lang?v.lang:"zh-TW";if(v)u.voice=v;
+  u.rate=S.rate;u.pitch=p;
   return u;
 }
 function nativeSay(i,my){
@@ -818,7 +851,7 @@ function nativePlainOne(k,my,done){
   (function next(){
     if(my!==token)return;
     if(c>=chunks.length){setTimeout(done,380);return;}
-    var u=utter(chunks[c++]);
+    var u=utter(chunks[c++],true);
     u.onend=function(){if(my!==token)return;next();};
     u.onerror=nativeErr(my);
     speechSynthesis.speak(u);
@@ -914,7 +947,7 @@ function plainDone(my){
 function playPlain(k){
   var ps=plainSents(cn),x=ps[k];
   if(!x){finish();return;}
-  var e=noteEngine();
+  var e=plainEngine();
   if(!e){finish();noSpeech();return;}
   if(eng==="rec"&&audio)audio.pause();
   if(eng==="native"||e==="native"){try{speechSynthesis.cancel();}catch(z){}}
@@ -925,7 +958,7 @@ function playPlain(k){
   ensurePlainShown(inter?"line":"end");
   markPlain(k);
   if(e==="native")setTimeout(function(){
-    if(inter)nativePlainOne(k,my,function(){nativeSay(x.b+1,my);});
+    if(inter)nativePlainOne(k,my,function(){jingFrom(x.b+1,my);});
     else nativePlainSeq(k,my);
   },60);
   else claudeSpeak(inter?claudeLines(x.b+1,S.readNotes,k):plainLines(k).concat(S.readNotes?noteLines(0,0):[]),my);
@@ -933,8 +966,8 @@ function playPlain(k){
 function play(from){
   eng=engineNow();
   if(!eng){noSpeech();return;}
-  // 逐句交錯：白話沒有預錄，經文也改用 Claude 語音或手機語音
-  if(eng==="rec"&&wantPlain()&&plainMode()==="inter")eng=noteEngine();
+  // 逐句交錯：白話沒有預錄。有中文手機語音時經文仍用預錄、白話用手機語音穿插；否則經文也改用 Claude 語音
+  if(eng==="rec"&&wantPlain()&&plainMode()==="inter"&&!mixedRec())eng=noteEngine();
   if(!eng){noSpeech();return;}
   if(wantPlain()&&plainMode()==="inter")ensurePlainShown("line");
   token++;var my=token;mode="jing";
@@ -1068,15 +1101,22 @@ $("dvoiceSel").onchange=function(e){
   voice=dvoices.find(function(v){return v.voiceURI===S.dvoice;})||voice;
 };
 $("pitchRange").oninput=function(e){S.pitch=+e.target.value;$("pitchOut").textContent=S.pitch.toFixed(2);saveS();};
-$("pitchRange").onchange=function(){if(state==="playing"&&eng==="native"){if(mode==="note")playNotes(np,nsi);else play(cur);}};
+$("pitchRange").onchange=function(){if(state==="playing"&&eng==="native"){if(mode==="note")playNotes(np,nsi);else if(mode==="plain")playPlain(pk);else play(cur);}};
 $("testVoice").onclick=function(){
   stopAll();
   var e=engineNow();if(!e){noSpeech();return;}
   eng=e;
   var c1=CH(1),txt=spoken(c1.clauses[1]+c1.clauses[2]);
-  if(e==="rec"&&recReady(1)){recInit(1);audio.onended=null;audio.src=recUrls[1][Math.min(1,recUrls[1].length-1)];audio.defaultPlaybackRate=audio.playbackRate=recRate();var pr=audio.play();if(pr&&pr.catch)pr.catch(function(){});}
-  else if(e==="native"){speechSynthesis.cancel();speechSynthesis.speak(utter(txt));}
-  else if(e==="claude")claudeTts.speak([{text:txt,id:"test"}],claudeOpts()).catch(function(err){
+  // 開了朗讀白話時，經文後接一句白話，聽聽兩種聲音的差別
+  var p1=S.readPlain!=="off"?plainSents(1).filter(function(x){return x.a===1;})[0]:null,ptxt=p1?spokenPlain(p1.text):"";
+  if(e==="rec"&&recReady(1)){
+    recInit(1);
+    // 預錄之後只接手機語音（Claude 語音沒有使用者手勢會失敗）
+    audio.onended=(ptxt&&hasNative&&dvoices.length)?function(){audio.onended=null;speechSynthesis.cancel();speechSynthesis.speak(utter(ptxt,true));}:null;
+    audio.src=recUrls[1][Math.min(1,recUrls[1].length-1)];audio.defaultPlaybackRate=audio.playbackRate=recRate();var pr=audio.play();if(pr&&pr.catch)pr.catch(function(){});
+  }
+  else if(e==="native"){speechSynthesis.cancel();speechSynthesis.speak(utter(txt));if(ptxt)speechSynthesis.speak(utter(ptxt,true));}
+  else if(e==="claude")claudeTts.speak([{text:txt,id:"test"}].concat(ptxt?[{text:ptxt,id:"test-p",voice:plainVoice()}]:[]),claudeOpts()).catch(function(err){
     if(err&&err.code==="not_granted"){claudeOff=true;renderVoiceUI();}
     else if(err&&err.code==="unavailable"){claudeTts=null;renderVoiceUI();}
   });
@@ -1087,7 +1127,7 @@ if(window.claude&&window.claude.use){
   window.claude.use("tts").then(function(t){
     if(!t)return;claudeTts=t;
     t.onLine(function(o){
-      if(eng!=="claude"||!o||!o.id||o.id==="test"||state==="idle")return;
+      if(eng!=="claude"||!o||!o.id||String(o.id).indexOf("test")===0||state==="idle")return;
       var id=String(o.id);
       if(id.indexOf("n:")===0){var q=id.split(":");mode="note";np=+q[1];nsi=+q[2];$("plainView").classList.remove("on");if(!notesVisible())openNotes();markNote(np,nsi);}
       else if(id.indexOf("p:")===0){mode="plain";pk=+id.slice(2);ensurePlainShown(plainMode()==="inter"?"line":"end");markPlain(pk);}
