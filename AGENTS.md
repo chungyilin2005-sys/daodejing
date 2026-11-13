@@ -21,6 +21,7 @@ daodejing/
 ├── tools/tts_edge.py               edge-tts 逐章逐句產生經文錄音 → audio/
 ├── tools/make_review.py            校勘等待確認事項的審閱頁 → review/（配 review.template.html）
 ├── tools/make_plain_review.py      白話逐句對照頁 → review/（配 plain_review.template.html，供使用者選讀、提意見）
+├── tools/notes_plain.py            注釋白話起草輔助（dump／merge／check）
 ├── data/chapters.json              81 章：章序、章名、經文、經文附註位置（fetch 產生，勿手改）
 ├── data/notes/01.txt～81.txt       各章注釋（段落以空行分隔；fetch 產生，勿手改）
 ├── data/preface.txt                黃元吉自序（fetch 產生，勿手改）
@@ -28,6 +29,7 @@ daodejing/
 ├── data/corrections.json           使用者確認過的錄入錯字修正（67 條，建置時套用）
 ├── data/corrections.proposed.json  校勘建議（未套用）
 ├── data/plain.json                 經文白話（Claude 依黃元吉注意譯；可手改，見下方規則）
+├── data/plain_notes.json           注釋與自序白話（每段大意；可手改，見下方規則）
 ├── data/raw/source.json            來源網址、oldid、SHA-1、取得日期
 ├── data/raw/*.wiki                 下載的原始碼（含蕭天石例言，不進 git）
 ├── audio/                          錄音與 manifest.json（產生後才有）
@@ -42,7 +44,7 @@ daodejing/
 2. 文字只能經由以下途徑改變：
    - 轉換問題 → `data/convert_rules.json`，再執行 `python tools/fetch_notes.py --offline`。
    - 錄入錯字 → 使用者確認後加進 `data/corrections.json`。**不可直接改 `data/` 下 fetch 產生的檔案，也不可自行修字。**
-   - 白話 → 改 `data/plain.json`（使用者提出意見時才改，不自行潤飾）。
+   - 白話 → 改 `data/plain.json`；注釋白話 → 改 `data/plain_notes.json`（都是使用者提出意見時才改，不自行潤飾）。
 3. 建置：
    ```bash
    pip install fonttools brotli pillow opencc
@@ -57,6 +59,7 @@ daodejing/
 
 - **注釋全文只來自維基文庫 oldid 2315999**，不可憑記憶生成、補寫或改寫。更換版本號須經使用者同意，並更新 `SOURCES.md`。
 - **白話只來自 `data/plain.json`**，依黃元吉注意譯、只譯經文。2026-11-11 使用者表示無法逐句審閱，交由 Claude 起草並自行校對定稿（`ok: true` 表示 Claude 已校對；`ok: false` 的句子不進網頁）。頁面必須標示「白話：Claude 依黃元吉注意譯，未經專家審訂，僅供參考」，不可寫成使用者或專家審定。定稿後的句子只依使用者的意見修改，不自行潤飾。經文校勘改到某句時，`build.py` 會因 `jing` 不符而停止，須重譯該句並告知使用者。
+- **注釋白話只來自 `data/plain_notes.json`**：2026-11-13 使用者決定注釋與自序也加白話，精簡成每段大意、不逐句照翻；Claude 起草並自行校對，頁面標示「注釋白話：Claude 依黃元吉注整理大意，未經專家審訂，僅供參考」。注釋白話不朗讀。注釋校勘改到某段時，`build.py` 會因 `sha` 不符而停止，須重寫該段並告知使用者。
 - **不收錄蕭天石例言**；`data/raw/*.wiki` 不可提交到 git。
 - **單一檔案、零外部資源**：不可引用 CDN、外部圖片、外部字體或任何網路請求。
 - **不可修改顯示用的經文來修正讀音**，讀音問題只改 `SAY`（見 `SPEC.md` 3.3）。

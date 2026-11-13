@@ -125,3 +125,38 @@ def load_plain(chapters, only_ok=True):
         if seen and seen != set(want):
             print(f"注意：plain.json 第 {n} 章缺 {len(set(want) - seen)} 句白話")
     return out
+
+
+def load_plain_notes(data, only_ok=True):
+    """讀 data/plain_notes.json（注釋與自序的每段大意，Claude 起草並自行校對），並檢查與目前原文一致。
+
+    data 是 load() 的結果。章號 0 為自序。每段的 sha 是起草時原文（已套用校勘）的 SHA-1 前 12 碼，
+    與目前原文不符就停止（校勘改到該段時，須重寫大意）。
+    回傳 {章: {段號: text}}；only_ok 時只取 ok 為 true 的段落。
+    """
+    import hashlib
+    path = os.path.join(DATA, "plain_notes.json")
+    if not os.path.exists(path):
+        return {}
+    doc = json.load(open(path, encoding="utf-8"))
+    paras = {0: data["preface"]}
+    for c in data["chapters"]:
+        paras[c["n"]] = c["notes"]
+    out = {}
+    for n, items in doc.get("chapters", {}).items():
+        src = paras.get(int(n))
+        if src is None:
+            sys.exit(f"plain_notes.json：沒有第 {n} 章")
+        seen = set()
+        for it in items:
+            p = it["p"]
+            if p >= len(src):
+                sys.exit(f"plain_notes.json：第 {n} 章沒有第 {p} 段（注釋分段可能改變了）")
+            if hashlib.sha1(src[p].encode("utf-8")).hexdigest()[:12] != it["sha"]:
+                sys.exit(f"plain_notes.json：第 {n} 章第 {p} 段原文已改變（開頭：{src[p][:12]}），請重寫這一段大意")
+            if p in seen:
+                sys.exit(f"plain_notes.json：第 {n} 章第 {p} 段重複")
+            seen.add(p)
+            if (it.get("ok") or not only_ok) and it.get("text", "").strip():
+                out.setdefault(int(n), {})[p] = it["text"].strip()
+    return out

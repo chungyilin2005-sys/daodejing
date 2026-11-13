@@ -90,6 +90,16 @@ main{flex:1;min-height:0;position:relative}
 .cl.on2{background:var(--hl)}
 #sutra .pl,.notes .pl{cursor:pointer}
 .notes .pl{margin-block:0 1em}
+/* 注釋白話（黃元吉注與自序的每段大意）：nm-off 只看原文、nm-plain 只看白話、nm-both 原文後接白話 */
+.npl{color:var(--ink-soft);border-inline-start:2px solid var(--line);padding-inline-start:.6em}
+.prose .npl{text-indent:0}
+.nm-off .npl,.nm-off .npl-src{display:none}
+.nm-plain .orig{display:none}
+.nm-both .npl .pp{display:none}
+.nmode-row{margin:0 0 1em}
+.scroll.v .notes .nmode-row{display:none}
+.prose .nmode-row{text-indent:0}
+.nmode-btn{font-size:15px;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap}
 .pl-src{display:block;font-size:13px;line-height:1.7;letter-spacing:.04em;color:var(--ink-soft);margin-block:.6em 0}
 .prose{font-family:var(--sutra-font);font-size:var(--nfs);line-height:2.1;letter-spacing:.08em}
 .prose h2{font-size:1.3em;font-weight:400;letter-spacing:.25em;margin:0 0 1em}
@@ -252,6 +262,7 @@ main{flex:1;min-height:0;position:relative}
   <div class="bar">
     <button class="btn sq" data-nfs="-1" aria-label="注釋字縮小">小</button>
     <button class="btn sq" data-nfs="1" aria-label="注釋字放大">大</button>
+    <button class="btn nmode-cycle" id="nMode" hidden>原文</button>
     <button class="btn primary" id="nPlay">朗讀注釋</button>
     <button class="btn sq" id="nStop" aria-label="停止" disabled>
       <svg viewBox="0 0 24 24" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/></svg>
@@ -326,6 +337,13 @@ main{flex:1;min-height:0;position:relative}
     <button data-plain="line" aria-pressed="false">逐句對照</button>
   </div>
   <p class="note">白話由 Claude 依黃元吉注意譯，未經專家審訂，僅供參考。「逐句對照」把白話接在每句經文後面；「章末」在經文後放一個「白話」按鈕。字級跟注釋相同。</p>
+  <h3>注釋白話</h3>
+  <div class="seg" id="nplainSeg">
+    <button data-nm="off" aria-pressed="true">原文</button>
+    <button data-nm="both" aria-pressed="false">對照</button>
+    <button data-nm="plain" aria-pressed="false">只看白話</button>
+  </div>
+  <p class="note">黃元吉注釋與自序每一段的大意，由 Claude 整理成白話，未經專家審訂，僅供參考。「對照」在每段原文後接白話；「只看白話」把原文收起來（朗讀注釋時會暫時顯示原文，念的仍是原文）。注釋面板與自序裡也有按鈕可以切換。</p>
   <h3>經文字級</h3>
   <div class="row"><input type="range" id="fsRange" min="16" max="60" step="1" aria-label="經文字級"><output id="fsOut"></output></div>
   <h3>注釋與白話字級</h3>
@@ -397,7 +415,7 @@ function unstore(k){try{localStorage.removeItem(k);}catch(e){}}
 var toastT;
 function toast(msg,ms){var t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("on");},ms||2600);}
 
-var S=Object.assign({fs:26,nfs:18,layout:"v",font:"wenkai",pen:4,rate:0.8,theme:"auto",engine:"auto",cvoice:"buttery",dvoice:"",pitch:1,readNotes:false,plain:"off",readPlain:"off"},load("dd.set",{}));
+var S=Object.assign({fs:26,nfs:18,layout:"v",font:"wenkai",pen:4,rate:0.8,theme:"auto",engine:"auto",cvoice:"buttery",dvoice:"",pitch:1,readNotes:false,plain:"off",readPlain:"off",nplain:"off"},load("dd.set",{}));
 function saveS(){store("dd.set",S);}
 
 /* ---------- 章節資料 ---------- */
@@ -532,18 +550,59 @@ function buildRead(){
     });
     var nh2=document.createElement("p");nh2.className="nhead";nh2.textContent="注釋";notesEl.appendChild(nh2);
   }
+  var NP=nplainOf(cn);
+  if(NP)notesEl.insertBefore(nmodeRow(),notesEl.firstChild);
   c.notes.forEach(function(sents,pi){
     var p=document.createElement("p");p.dataset.p=String(pi);
     var pb=document.createElement("button");pb.className="pp";pb.innerHTML=PLAY;pb.dataset.p=String(pi);pb.setAttribute("aria-label","從這一段開始朗讀注釋");
     p.appendChild(pb);
     sents.forEach(function(st,si){var sp=document.createElement("span");sp.className="ns";sp.dataset.p=String(pi);sp.dataset.s=String(si);sp.textContent=st;p.appendChild(sp);});
     notesEl.appendChild(p);
+    if(NP&&NP[String(pi)]){
+      p.classList.add("orig");
+      var q=document.createElement("p");q.className="npl";q.dataset.p=String(pi);
+      var qb=document.createElement("button");qb.className="pp";qb.innerHTML=PLAY;qb.dataset.p=String(pi);qb.setAttribute("aria-label","從這一段開始朗讀注釋原文");
+      q.appendChild(qb);q.append(NP[String(pi)]);notesEl.appendChild(q);
+    }
   });
+  if(NP){var ns=document.createElement("p");ns.className="pl-src npl-src";ns.textContent=NPLAIN_SRC;notesEl.appendChild(ns);}
+  applyNMode();
   $("notesTitle").textContent="黃元吉注釋　"+chapName(cn);
   $("chapLabel").textContent=chapName(cn);
   $("prevChap").disabled=cn<=1;$("nextChap").disabled=cn>=NCH;
   placeNotes();placePlain();
 }
+/* ---------- 注釋白話（data/plain_notes.json：注釋與自序每段大意，章 0 為自序；build.py 只放已校對的段落）---------- */
+var NPLAIN_SRC="注釋白話：Claude 依黃元吉注整理大意，未經專家審訂，僅供參考";
+var NM_NAME={off:"原文",both:"對照",plain:"白話"},NM_LONG={off:"原文",both:"對照",plain:"只看白話"},NM_NEXT={off:"both",both:"plain",plain:"off"};
+var nmTemp=false; // 只看白話時朗讀注釋：暫時改成對照，念完收回
+function nplainOf(n){var P=DATA.nplain&&DATA.nplain[String(n)];return P&&Object.keys(P).length?P:null;}
+function nmodeRow(){
+  var r=document.createElement("div");r.className="nmode-row";
+  var b=document.createElement("button");b.className="nmode-btn";b.type="button";
+  b.onclick=function(){setNMode(NM_NEXT[S.nplain]);};
+  r.appendChild(b);return r;
+}
+function effNMode(){return nmTemp&&S.nplain==="plain"?"both":S.nplain;}
+function applyNMode(){
+  var m=effNMode();
+  [notesEl,$("preface")].forEach(function(el){if(!el)return;el.classList.remove("nm-off","nm-both","nm-plain");el.classList.add("nm-"+m);});
+  var label="注釋白話："+NM_LONG[S.nplain];
+  var btns=[].slice.call(document.querySelectorAll(".nmode-btn"));
+  if(notesEl&&!notesEl.isConnected)btns=btns.concat([].slice.call(notesEl.querySelectorAll(".nmode-btn")));
+  btns.forEach(function(b){b.textContent=label;b.setAttribute("aria-label",label+"，點一下切換");});
+  var nb=$("nMode");nb.hidden=!nplainOf(cn);nb.textContent=NM_NAME[S.nplain];nb.setAttribute("aria-label",label+"，點一下切換");
+  document.querySelectorAll("#nplainSeg button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.nm===S.nplain));});
+}
+function setNMode(m){
+  if(S.nplain===m)return;
+  S.nplain=m;saveS();applyNMode();
+  toast({off:"注釋：只看原文",both:"注釋：原文與白話對照",plain:"注釋：只看白話"}[m],1400);
+}
+$("nMode").onclick=function(){setNMode(NM_NEXT[S.nplain]);};
+document.querySelectorAll("#nplainSeg button").forEach(function(b){b.onclick=function(){setNMode(b.dataset.nm);};});
+function nmTempOn(){if(S.nplain==="plain"&&!nmTemp){nmTemp=true;applyNMode();}}
+function nmTempOff(){if(nmTemp){nmTemp=false;applyNMode();}}
 /* ---------- 白話（data/plain.json，Claude 依黃元吉注意譯；build.py 只放已校對的句子）---------- */
 var PLAIN_SRC="白話：Claude 依黃元吉注意譯，未經專家審訂，僅供參考";
 var plainEl=null,plainOpen=false;
@@ -804,7 +863,7 @@ function mark(a,b){
   if(first)first.scrollIntoView({block:"center",inline:"center",behavior:"smooth"});
 }
 function markNote(p,s){
-  clearMarks();
+  clearMarks();nmTempOn();
   var el=notesEl&&notesEl.querySelector('.ns[data-p="'+p+'"][data-s="'+s+'"]');
   if(el){el.classList.add("on");if(notesVisible())el.scrollIntoView({block:"center",inline:"center",behavior:"smooth"});}
 }
@@ -929,7 +988,7 @@ function claudeSpeak(lines,my){
   claudeTts.speak(lines,claudeOpts()).then(function(){if(my===token&&state==="playing")finish();})
     .catch(function(err){if(my===token)claudeFail(err);});
 }
-function finish(){state="idle";mode="jing";cur=0;pk=0;np=0;nsi=0;clearMarks();plainRestore();setUI();}
+function finish(){state="idle";mode="jing";cur=0;pk=0;np=0;nsi=0;clearMarks();plainRestore();nmTempOff();setUI();}
 // 經文念完：整章接念就念白話；開了「朗讀注釋」就接著念注釋
 function jingDone(my){
   if(my!==token)return;
@@ -1448,11 +1507,15 @@ $("menuList").addEventListener("click",function(e){
 function buildPreface(){
   var el=$("preface");el.innerHTML="";
   var h=document.createElement("h2");h.textContent="自序";el.appendChild(h);
+  var NP=nplainOf(0);
+  if(NP)el.appendChild(nmodeRow());
   DATA.preface.forEach(function(t,i){
     var p=document.createElement("p");p.textContent=t;
     if(i===DATA.preface.length-1&&t.length<30)p.className="sign";
     el.appendChild(p);
+    if(NP&&NP[String(i)]){p.classList.add("orig");var q=document.createElement("p");q.className="npl";q.textContent=NP[String(i)];el.appendChild(q);}
   });
+  if(NP){var ns=document.createElement("p");ns.className="pl-src npl-src";ns.textContent=NPLAIN_SRC;el.appendChild(ns);}
 }
 
 /* ---------- 設定面板 ---------- */
@@ -1515,6 +1578,7 @@ window.addEventListener("hashchange",function(){var p=parseHash();show(p.v,p.n);
 /* ---------- 啟動 ---------- */
 if(["off","end","line"].indexOf(S.plain)<0)S.plain="off";
 if(["off","after","inter"].indexOf(S.readPlain)<0)S.readPlain="off";
+if(["off","both","plain"].indexOf(S.nplain)<0)S.nplain="off";
 buildPreface();applyFs();setUI();renderVoiceUI();applyPlainUI();
 $("penRange").value=S.pen;$("penOut").textContent=S.pen;
 if(typeof ResizeObserver!=="undefined")new ResizeObserver(function(){if($("view-trace").classList.contains("on"))layoutCell();}).observe($("stage"));
