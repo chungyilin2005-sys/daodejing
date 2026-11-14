@@ -4,13 +4,18 @@
 
 用法（在專案根目錄執行）：
     pip install edge-tts
-    python tools/tts_edge.py --format opus-24k
+    python tools/tts_edge.py --format cat-24k
     其他選項：
         --voice zh-TW-HsiaoYuNeural   聲音（預設曉雨；另有 zh-TW-HsiaoChenNeural 曉臻、zh-TW-YunJheNeural 雲哲）
         --rate -10%                   語速（預設 -10%）
         --pitch +0Hz                  音高
-        --format mp3-48k              mp3-48k（edge-tts 原檔，不轉檔）、mp3-32k、mp3-24k、opus-24k、opus-16k
+        --format cat-24k              cat-24k（預設）、cat-32k：可直接接起來的 MP3（見下方說明）
+                                      舊格式 mp3-48k、mp3-32k、mp3-24k、opus-24k、opus-16k 網頁已不支援
                                       除 mp3-48k 外都需要 ffmpeg
+
+可接續的格式（cat-*）：24 kHz 單聲道、固定位元率、關掉位元庫、不寫 Xing 與 ID3 標頭。
+每幀大小固定（24k：72 位元組；32k：96 位元組）、0.024 秒，網頁可把一章的句子直接接成一條音訊播放，
+手機關掉螢幕後才不會中斷（Android Chrome 在背景時只讓網頁換一兩次音檔）。另外產生 audio/silence.mp3 作為句間停頓。
         --only 20                     只重做第 20 章（可重複指定）
 
 注意：edge-tts 使用的是 Edge 的非公開介面，不是微軟正式授權的服務，可能隨時改變或失效。
@@ -28,7 +33,11 @@ import textdata  # noqa: E402
 
 TEMPLATE = os.path.join(ROOT, "src", "daodejing.template.html")
 OUTDIR = os.path.join(ROOT, "audio")
+CAT = ["-ac", "1", "-ar", "24000", "-c:a", "libmp3lame", "-reservoir", "0",
+       "-write_xing", "0", "-id3v2_version", "0", "-map_metadata", "-1"]
 FORMATS = {  # 名稱: (副檔名, ffmpeg 參數；None 表示保留原檔)
+    "cat-24k": (".mp3", CAT + ["-b:a", "24k"]),
+    "cat-32k": (".mp3", CAT + ["-b:a", "32k"]),
     "mp3-48k": (".mp3", None),
     "mp3-32k": (".mp3", ["-ac", "1", "-ar", "24000", "-b:a", "32k"]),
     "mp3-24k": (".mp3", ["-ac", "1", "-ar", "22050", "-b:a", "24k"]),
@@ -68,7 +77,7 @@ async def main():
     ap.add_argument("--voice", default="zh-TW-HsiaoYuNeural")
     ap.add_argument("--rate", default="-10%")
     ap.add_argument("--pitch", default="+0Hz")
-    ap.add_argument("--format", default="mp3-48k", choices=sorted(FORMATS))
+    ap.add_argument("--format", default="cat-24k", choices=sorted(FORMATS))
     ap.add_argument("--only", type=int, action="append")
     a = ap.parse_args()
     try:
@@ -110,6 +119,9 @@ async def main():
         chapters[str(n)] = items
         if not a.only or n in a.only:
             print(f"第 {n} 章：{len(items)} 句")
+    if a.format.startswith("cat-"):  # 句間停頓用的無聲錄音（build.py 取其中一幀）
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", "1"]
+                       + ff + [os.path.join(OUTDIR, "silence.mp3")], check=True)
     manifest = {"voice": a.voice, "rate": a.rate, "pitch": a.pitch, "format": a.format,
                 "source": "edge-tts", "chapters": chapters}
     with open(man_path, "w", encoding="utf-8") as f:

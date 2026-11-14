@@ -18,7 +18,7 @@ daodejing/
 ├── tools/fetch_notes.py            下載維基文庫原始碼（固定 oldid）→ 解析 → 簡轉繁 → data/
 ├── tools/textdata.py               讀 data/ 並套用 data/corrections.json（build 與 tts 共用）
 ├── tools/build.py                  子集化字體、內嵌資料／圖示／錄音 → index.html
-├── tools/tts_edge.py               edge-tts 逐章逐句產生經文錄音 → audio/
+├── tools/tts_edge.py               edge-tts 逐章逐句產生經文錄音（可接續的 MP3）→ audio/
 ├── tools/make_review.py            校勘等待確認事項的審閱頁 → review/（配 review.template.html）
 ├── tools/make_plain_review.py      白話逐句對照頁 → review/（配 plain_review.template.html，供使用者選讀、提意見）
 ├── tools/notes_plain.py            注釋白話起草輔助（dump／merge／check）
@@ -83,6 +83,7 @@ daodejing/
 - 手機語音：逐句送出（長文字約 15 秒會中斷）；暫停 = `cancel()` 後記住位置；用遞增的 `token` 讓舊回呼失效；監聽 `voiceschanged`。
 - Claude 語音：整句一行送出，可用平台 `pause()`／`resume()`；`not_granted` 時不可自動改用手機語音。開了「朗讀注釋」或「朗讀白話」時，經文、白話、注釋要放在同一次 `speak()`（id 分別為 `j:起-迄`、`p:序`、`n:段:句`），避免沒有使用者手勢。
 - 注釋與白話都沒有預錄；預錄引擎時改用 Claude 語音或手機語音。白話「逐句交錯」且引擎是預錄時：手機有中文語音就經文照用預錄、白話用手機語音穿插（`mixedRec()`）；沒有手機中文語音才改用 Claude 語音念經文。不要每句在預錄與 Claude 語音間切換，會一直卡在需要使用者手勢。白話不要做預錄，會超過 16 MB。
+- 預錄：一章接成**一條音訊**播放，播放中不換 `audio.src`、不用 `setTimeout` 接下一句（Android Chrome 背景只讓網頁換一兩次音檔，關螢幕會停）。錄音必須是可接續格式 `cat-24k`／`cat-32k`（見 `SPEC.md` 3.3）。逐句交錯的白話是在句後停頓暫停錄音、念完再 `play()` 同一條。關螢幕時只念經文（使用者決定）。
 - 預錄只錄經文。改了經文（含校勘）或 `SAY` 就要重新產生錄音再建置。edge-tts 是非公開介面，出現 403 先升級套件；不要用偽造標頭繞過。
 - 錄音格式（`tts_edge.py --format`）會影響檔案大小，Artifact 上限 16 MB，見 `SPEC.md` 第 5 節。
 

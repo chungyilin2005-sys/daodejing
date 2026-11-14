@@ -24,7 +24,7 @@ EXTRA = "0123456789〇一二三四五六七八九十第章民國年月日敬書"
 LIMIT = 16 * 1024 * 1024
 
 html = open(TEMPLATE, encoding="utf-8").read()
-for ph in ("__FONT_B64__", "__ICON_B64__", "/*__DATA__*/null", "/*__AUDIO__*/null"):
+for ph in ("__FONT_B64__", "__ICON_B64__", "/*__DATA__*/null", "/*__AUDIO__*/null", "__RECDATA__"):
     if ph not in html:
         sys.exit(f"範本缺少 {ph} 預留位置")
 
@@ -89,29 +89,48 @@ except Exception as e:
 html = html.replace("__ICON_B64__", base64.b64encode(open(ICON, "rb").read()).decode())
 html = html.replace("/*__DATA__*/null", pjson.replace("</", "<\\/"))
 
-# ---- 預錄朗讀：audio/manifest.json 存在時，各章各句音檔以 base64 內嵌（由 tools/tts_edge.py 產生）----
+# ---- 預錄朗讀：audio/manifest.json 存在時內嵌（由 tools/tts_edge.py 產生）----
+# 錄音須為可接續的 MP3（cat-* 格式）：每幀大小固定、彼此獨立，網頁把一章接成一條音訊播放（手機關螢幕不中斷）。
+# 主程式內只放說明資料 REC；錄音本身放在主程式後面的 <script type="application/json" id="recData">，
+# 網頁前面讀完就先顯示，錄音在背景下載。
 AUDIO = os.path.join(ROOT, "audio")
 MANIFEST = os.path.join(AUDIO, "manifest.json")
+FRAMES = {"cat-24k": 72, "cat-32k": 96}  # 24 kHz MPEG-2 Layer III：每幀 72 × 位元率 ÷ 24000 位元組、576 取樣
+recdata = "{}"
 if os.path.exists(MANIFEST):
     man = json.load(open(MANIFEST, encoding="utf-8"))
-    mimes = {".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".opus": "audio/ogg", ".webm": "audio/webm", ".m4a": "audio/mp4"}
-    chs, total = {}, 0
+    F = FRAMES.get(man.get("format"))
+    if not F:
+        sys.exit(f"錄音格式 {man.get('format')} 無法接續播放，請執行 python tools/tts_edge.py --format cat-24k 重新產生")
+
+    def frames_ok(b):
+        return len(b) > 0 and len(b) % F == 0 and all(
+            b[i] == 0xFF and b[i + 1] & 0xE0 == 0xE0 for i in range(0, len(b), F))
+
+    sil = open(os.path.join(AUDIO, "silence.mp3"), "rb").read() if os.path.exists(os.path.join(AUDIO, "silence.mp3")) else b""
+    if not frames_ok(sil) or len(sil) < 21 * F:
+        sys.exit("audio/silence.mp3 缺少或格式不對，請重新執行 tools/tts_edge.py")
+    ids, data_b64, total = {}, {}, 0
     for n, items in man["chapters"].items():
-        out = []
+        ids[n], data_b64[n] = [], []
         for it in items:
             p = os.path.join(AUDIO, it["file"])
             if not os.path.exists(p):
                 sys.exit(f"缺少音檔 {p}，請重新執行 tools/tts_edge.py")
             raw = open(p, "rb").read()
+            if not frames_ok(raw):
+                sys.exit(f"音檔 {p} 不是可接續的格式，請重新執行 tools/tts_edge.py")
             total += len(raw)
-            out.append({"id": it["id"], "type": mimes.get(os.path.splitext(p)[1], "audio/mpeg"),
-                        "b64": base64.b64encode(raw).decode()})
-        chs[n] = out
-    rec = {"voice": man.get("voice", ""), "chapters": chs}
+            ids[n].append(it["id"])
+            data_b64[n].append(base64.b64encode(raw).decode())
+    rec = {"voice": man.get("voice", ""), "frame": F, "fdur": 576 / 24000,
+           "sil": base64.b64encode(sil[20 * F:21 * F]).decode(), "chapters": ids}
     html = html.replace("/*__AUDIO__*/null", json.dumps(rec, ensure_ascii=False, separators=(",", ":")))
-    print(f"已內嵌預錄朗讀 {len(chs)} 章（{man.get('voice', '')}，音檔 {total / 1048576:.1f} MB）")
+    recdata = json.dumps(data_b64, separators=(",", ":"))
+    print(f"已內嵌預錄朗讀 {len(ids)} 章（{man.get('voice', '')}，{man.get('format')}，音檔 {total / 1048576:.1f} MB）")
 else:
     print("沒有 audio/manifest.json，略過預錄朗讀")
+html = html.replace("__RECDATA__", recdata)
 
 open(OUT, "w", encoding="utf-8", newline="\n").write(html)
 size = os.path.getsize(OUT)

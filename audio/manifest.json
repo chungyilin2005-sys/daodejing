@@ -2,7 +2,7 @@
  "voice": "zh-TW-HsiaoYuNeural",
  "rate": "-10%",
  "pitch": "+0Hz",
- "format": "mp3-24k",
+ "format": "cat-24k",
  "source": "edge-tts",
  "chapters": {
   "1": [
